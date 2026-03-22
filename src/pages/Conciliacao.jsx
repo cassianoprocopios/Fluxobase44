@@ -323,6 +323,8 @@ export default function Conciliacao() {
               {FILTER_OPTIONS.map((opt) => {
                 const count = matches.filter((m) => {
                   if (opt.value === "all") return true;
+                  if (opt.value === "entrada") return m.bankTx.type === "entrada";
+                  if (opt.value === "saida") return m.bankTx.type === "saida";
                   if (opt.value === "confirmed") return m.confirmed;
                   if (opt.value === "ignored") return m.ignored;
                   if (opt.value === "pending") return !m.confirmed && !m.ignored && m.status === "pending";

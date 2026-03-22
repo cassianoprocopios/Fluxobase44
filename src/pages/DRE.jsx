@@ -105,6 +105,10 @@ export default function DRE() {
 
   const years = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
 
+  const visibleMonths = selectedMonth === "all"
+    ? MONTHS_PT.map((m, i) => ({ label: m, idx: i }))
+    : [{ label: MONTHS_PT[parseInt(selectedMonth)], idx: parseInt(selectedMonth) }];
+
   if (isLoading) {
     return (
       <div className="space-y-4">

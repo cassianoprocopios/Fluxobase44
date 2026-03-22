@@ -75,6 +75,10 @@ export default function FluxoCaixa() {
 
   const years = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
 
+  const filteredData = selectedMonth === "all"
+    ? chartData
+    : chartData.filter((_, idx) => idx === parseInt(selectedMonth));
+
   if (isLoading) {
     return (
       <div className="space-y-4">

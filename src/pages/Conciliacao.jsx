@@ -29,6 +29,7 @@ const FILTER_OPTIONS = [
 export default function Conciliacao() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const [step, setStep] = useState("upload"); // "upload" | "review"
   const [fileName, setFileName] = useState("");

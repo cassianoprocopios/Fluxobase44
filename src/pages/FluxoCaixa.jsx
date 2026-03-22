@@ -41,6 +41,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function FluxoCaixa() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
+  const [selectedMonth, setSelectedMonth] = useState("all");
 
   const { data: rawTransactions = [], isLoading } = useQuery({
     queryKey: ["transactions"],

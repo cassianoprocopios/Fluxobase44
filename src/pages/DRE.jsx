@@ -15,6 +15,7 @@ import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants
 export default function DRE() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
+  const [selectedMonth, setSelectedMonth] = useState("all");
 
   const { data: rawTransactions = [], isLoading } = useQuery({
     queryKey: ["transactions"],

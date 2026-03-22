@@ -307,7 +307,7 @@ export default function Conciliacao() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => { setStep("upload"); setMatches([]); }}
+              onClick={() => { setStep("upload"); setMatches([]); updateConcState({ filter: "all", selectedIds: new Set() }); }}
               className="gap-1.5"
             >
               <ArrowLeft className="w-4 h-4" /> Novo extrato

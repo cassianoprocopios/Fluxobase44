@@ -164,6 +164,9 @@ export default function Conciliacao() {
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
     setIsSaving(false);
 
+    // Limpar session após salvar com sucesso
+    updateConcState({ step: "upload", fileName: "", matches: [], filter: "all", selectedIds: new Set() });
+
     toast({
       title: "Conciliação salva",
       description: `${created} lançamento(s) criado(s), ${updated} atualizado(s) para "Pago".`,

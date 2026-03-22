@@ -164,7 +164,11 @@ export default function Conciliacao() {
   const autoMatchCount = matches.filter((m) => m.status === "matched" && !m.confirmed && !m.ignored).length;
   const confirmedCount = matches.filter((m) => m.confirmed).length;
 
-  // Bulk selection helpers
+  // Split by type
+  const entradasFiltered = filteredMatches.filter((m) => m.bankTx.type === "entrada");
+  const saidasFiltered = filteredMatches.filter((m) => m.bankTx.type === "saida");
+
+  // Bulk selection helpers (per visible group)
   const selectableIds = filteredMatches
     .filter((m) => !m.confirmed && !m.ignored)
     .map((m) => m.bankTx.id);

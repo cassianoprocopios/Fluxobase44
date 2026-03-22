@@ -16,10 +16,11 @@ import RecentTransactions from "@/components/dashboard/RecentTransactions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Dashboard() {
-  const { data: transactions = [], isLoading } = useQuery({
+  const { data: rawTransactions = [], isLoading } = useQuery({
     queryKey: ["transactions"],
     queryFn: () => base44.entities.Transaction.list("-date", 5000),
   });
+  const transactions = rawTransactions.map(normalizeTransaction);
 
   const now = new Date();
   const currentYear = now.getFullYear();

@@ -41,10 +41,11 @@ export default function Relatorios() {
   const [dateTo, setDateTo] = useState(new Date().toISOString().split("T")[0]);
   const [type, setType] = useState("todos");
 
-  const { data: transactions = [] } = useQuery({
+  const { data: rawTransactions = [] } = useQuery({
     queryKey: ["transactions"],
     queryFn: () => base44.entities.Transaction.list("-date", 5000),
   });
+  const transactions = rawTransactions.map(normalizeTransaction);
 
   const filtered = useMemo(() => {
     return transactions.filter((t) => {

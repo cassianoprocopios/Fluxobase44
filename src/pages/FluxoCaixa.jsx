@@ -42,10 +42,11 @@ export default function FluxoCaixa() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
 
-  const { data: transactions = [], isLoading } = useQuery({
+  const { data: rawTransactions = [], isLoading } = useQuery({
     queryKey: ["transactions"],
     queryFn: () => base44.entities.Transaction.list("-date", 5000),
   });
+  const transactions = rawTransactions.map(normalizeTransaction);
 
   const chartData = useMemo(() => {
     const year = parseInt(selectedYear);

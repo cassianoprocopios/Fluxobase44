@@ -37,10 +37,11 @@ export default function Lancamentos() {
     month: "",
   });
 
-  const { data: transactions = [], isLoading } = useQuery({
+  const { data: rawTransactions = [], isLoading } = useQuery({
     queryKey: ["transactions"],
     queryFn: () => base44.entities.Transaction.list("-date", 5000),
   });
+  const transactions = rawTransactions.map(normalizeTransaction);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],

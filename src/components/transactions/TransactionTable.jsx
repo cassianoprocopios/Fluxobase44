@@ -70,7 +70,7 @@ export default function TransactionTable({ transactions, onEdit, onDelete, userR
                   </TableCell>
                   <TableCell className="text-sm">
                     {t.date
-                      ? format(new Date(t.date), "dd/MM/yy", { locale: ptBR })
+                      ? format(new Date(t.date.substring(0, 10)), "dd/MM/yy", { locale: ptBR })
                       : "—"}
                   </TableCell>
                   <TableCell className="text-sm font-medium">{t.category}</TableCell>

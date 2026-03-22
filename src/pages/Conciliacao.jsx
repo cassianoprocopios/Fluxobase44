@@ -67,7 +67,8 @@ export default function Conciliacao() {
 
   const handleParsed = (bankTxns, name) => {
     setFileName(name);
-    const result = autoMatch(bankTxns, transactions, rules);
+    const sortedTxns = bankTxns.sort((a, b) => b.amount - a.amount);
+    const result = autoMatch(sortedTxns, transactions, rules);
     setMatches(result);
     setStep("review");
   };

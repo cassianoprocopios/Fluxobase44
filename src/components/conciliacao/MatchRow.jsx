@@ -183,12 +183,23 @@ export default function MatchRow({
         </div>
 
         {/* Expand / action button */}
-        {!confirmed && !ignored && (
+        {!confirmed && !ignored ? (
           <button
             onClick={() => setExpanded((v) => !v)}
             className="shrink-0 h-8 w-8 flex items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
           >
             <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
+          </button>
+        ) : (
+          <button
+            onClick={() => {
+              // Reabre para reclassificação
+              onConfirmMatch && onConfirmMatch(bankTx.id, null, true); // sinaliza "reset"
+              setExpanded(true);
+            }}
+            className="shrink-0 h-8 px-2.5 flex items-center gap-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-xs text-muted-foreground"
+          >
+            <ChevronDown className="w-3.5 h-3.5" /> Editar
           </button>
         )}
       </div>

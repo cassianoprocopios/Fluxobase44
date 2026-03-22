@@ -192,17 +192,19 @@ export default function DRE() {
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground sticky left-0 bg-muted/80 z-10 border-r">
                     Descrição
                   </th>
-                  {MONTHS_PT.map((m) => (
+                  {visibleMonths.map(({ label }) => (
                     <th
-                      key={m}
+                      key={label}
                       className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                     >
-                      {m}
+                      {label}
                     </th>
                   ))}
-                  <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l">
-                    Total
-                  </th>
+                  {selectedMonth === "all" && (
+                    <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l">
+                      Total
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

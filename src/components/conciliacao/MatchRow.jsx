@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Check, Link2, Plus, X, ChevronDown, ArrowRight, CheckCircle2, Tag } from "lucide-react";
@@ -44,11 +44,9 @@ export default function MatchRow({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const wasConfirmed = React.useRef(confirmed || ignored);
-  const [expanded, setExpanded] = useState(false);
-
-  // Quando o item é resetado (confirmed/ignored vira false), abre o painel
-  React.useEffect(() => {
+  const wasConfirmed = useRef(confirmed || ignored);
+...
+  useEffect(() => {
     if (wasConfirmed.current && !confirmed && !ignored) {
       setExpanded(true);
     }

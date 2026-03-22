@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +13,7 @@ import KPICard from "@/components/dashboard/KPICard";
 import MonthlyChart from "@/components/dashboard/MonthlyChart";
 import CashFlowMini from "@/components/dashboard/CashFlowMini";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Dashboard() {
   const { data: transactions = [], isLoading } = useQuery({

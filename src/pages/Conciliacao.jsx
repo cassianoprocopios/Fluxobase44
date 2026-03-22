@@ -163,6 +163,80 @@ export default function Conciliacao() {
   const autoMatchCount = matches.filter((m) => m.status === "matched" && !m.confirmed && !m.ignored).length;
   const confirmedCount = matches.filter((m) => m.confirmed).length;
 
+  // Bulk selection helpers
+  const selectableIds = filteredMatches
+    .filter((m) => !m.confirmed && !m.ignored)
+    .map((m) => m.bankTx.id);
+
+  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selectedIds.has(id));
+  const someSelected = selectableIds.some((id) => selectedIds.has(id));
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        selectableIds.forEach((id) => next.delete(id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => new Set([...prev, ...selectableIds]));
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  // Bulk actions
+  const handleBulkConfirmMatched = () => {
+    setMatches((prev) =>
+      prev.map((m) =>
+        selectedIds.has(m.bankTx.id) && m.status === "matched" && !m.confirmed && !m.ignored
+          ? { ...m, confirmed: true, linkedTx: m.systemTx }
+          : m
+      )
+    );
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkIgnore = () => {
+    setMatches((prev) =>
+      prev.map((m) =>
+        selectedIds.has(m.bankTx.id) && !m.confirmed && !m.ignored
+          ? { ...m, ignored: true }
+          : m
+      )
+    );
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkCreateNew = () => {
+    setMatches((prev) =>
+      prev.map((m) =>
+        selectedIds.has(m.bankTx.id) && !m.confirmed && !m.ignored
+          ? {
+              ...m,
+              confirmed: true,
+              createNew: true,
+              linkedTx: null,
+              newCategory: m.bankTx.type === "entrada" ? "Outras Receitas" : "Outras Despesas",
+            }
+          : m
+      )
+    );
+    setSelectedIds(new Set());
+  };
+
+  const selectedCount = selectedIds.size;
+  const selectedMatchedCount = [...selectedIds].filter((id) => {
+    const m = matches.find((x) => x.bankTx.id === id);
+    return m && m.status === "matched" && !m.confirmed && !m.ignored;
+  }).length;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">

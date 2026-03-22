@@ -240,6 +240,9 @@ export default function FluxoCaixa() {
                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Saldo
                   </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Geração de Caixa
+                  </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l">
                     Acumulado
                   </th>

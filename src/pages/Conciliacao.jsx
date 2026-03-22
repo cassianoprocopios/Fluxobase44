@@ -161,6 +161,8 @@ export default function Conciliacao() {
   const filteredMatches = useMemo(() => {
     return matches.filter((m) => {
       if (filter === "all") return true;
+      if (filter === "entrada") return m.bankTx.type === "entrada";
+      if (filter === "saida") return m.bankTx.type === "saida";
       if (filter === "confirmed") return m.confirmed;
       if (filter === "ignored") return m.ignored;
       if (filter === "pending") return !m.confirmed && !m.ignored && m.status === "pending";

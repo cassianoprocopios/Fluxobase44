@@ -211,48 +211,55 @@ export default function RegrasCategorizacao() {
           ) : (
             <div className="divide-y divide-border">
               {filteredRules.map((rule) => (
-                <div key={rule.id} className={`flex items-center gap-3 px-4 py-3 ${!rule.is_active ? "opacity-50" : ""}`}>
-                  {/* Toggle */}
-                  {canEdit && (
-                    <Switch
-                      checked={rule.is_active}
-                      onCheckedChange={() => handleToggle(rule)}
-                      className="shrink-0"
-                    />
-                  )}
+                <div key={rule.id} className={`flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors ${!rule.is_active ? "opacity-60 bg-muted/20" : ""}`}>
+                  {/* Status indicator */}
+                  <div className="shrink-0 w-2 h-2 rounded-full" style={{ backgroundColor: rule.is_active ? "hsl(var(--success))" : "hsl(var(--muted-foreground))" }} />
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-sm font-semibold bg-muted px-1.5 py-0.5 rounded">
+                      <code className="text-sm font-semibold bg-muted px-2 py-0.5 rounded text-foreground">
                         {rule.keyword}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {MATCH_TYPE_LABELS[rule.match_type] || rule.match_type}
-                      </span>
+                      </code>
+                      <span className="text-xs text-muted-foreground">{MATCH_TYPE_LABELS[rule.match_type]}</span>
                       <span className="text-xs text-muted-foreground">→</span>
-                      <span className="text-sm font-medium">{rule.category}</span>
+                      <span className="font-medium text-sm">{rule.category}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs py-0">
-                        {TX_TYPE_LABELS[rule.transaction_type] || rule.transaction_type}
+                      <Badge variant="outline" className="text-xs">
+                        {TX_TYPE_LABELS[rule.transaction_type]}
                       </Badge>
+                      {rule.is_active && (
+                        <div className="flex items-center gap-1 text-xs text-success">
+                          <Check className="w-3 h-3" /> Ativa
+                        </div>
+                      )}
                       {!rule.is_active && (
-                        <span className="text-xs text-muted-foreground italic">Desativada</span>
+                        <span className="text-xs text-muted-foreground">Desativada</span>
                       )}
                     </div>
                   </div>
 
-                  {/* Delete */}
+                  {/* Actions */}
                   {canEdit && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0 text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDelete(rule.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleToggle(rule)}
+                        className="h-7 px-2 text-xs"
+                      >
+                        {rule.is_active ? "Desativar" : "Ativar"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0 text-muted-foreground hover:text-destructive h-7 w-7"
+                        onClick={() => handleDelete(rule.id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   )}
                 </div>
               ))}

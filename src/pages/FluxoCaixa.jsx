@@ -160,7 +160,14 @@ export default function FluxoCaixa() {
                   <XAxis dataKey="month" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="acumulado" name="Acumulado" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#acumGrad)" />
+                  <Area
+                    type="monotone"
+                    dataKey={selectedMonth === "all" ? "acumulado" : "saldo"}
+                    name={selectedMonth === "all" ? "Acumulado" : "Saldo"}
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    fill="url(#acumGrad)"
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </div>

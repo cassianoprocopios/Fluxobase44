@@ -67,9 +67,10 @@ export default function FluxoCaixa() {
         .filter((t) => t.type === "saida")
         .reduce((s, t) => s + (t.amount || 0), 0);
       const saldo = entradas - saidas;
+      const geracaoCaixa = saldo; // saldo líquido do período = geração de caixa
       saldoAcumulado += saldo;
 
-      return { month, entradas, saidas, saldo, acumulado: saldoAcumulado };
+      return { month, entradas, saidas, saldo, geracaoCaixa, acumulado: saldoAcumulado };
     });
   }, [transactions, selectedYear]);
 

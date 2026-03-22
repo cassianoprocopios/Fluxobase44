@@ -161,7 +161,7 @@ export default function DRE() {
         <div className="flex gap-2">
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
             <SelectTrigger className="w-36">
-              <SelectValue />
+              <SelectValue placeholder="Todos os meses" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os meses</SelectItem>

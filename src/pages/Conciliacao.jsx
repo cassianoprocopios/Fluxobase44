@@ -21,6 +21,8 @@ import { useToast } from "@/components/ui/use-toast";
 
 const FILTER_OPTIONS = [
   { value: "all", label: "Todos" },
+  { value: "entrada", label: "Entradas" },
+  { value: "saida", label: "Saídas" },
   { value: "pending", label: "Pendentes" },
   { value: "matched", label: "Com sugestão" },
   { value: "confirmed", label: "Conciliados" },

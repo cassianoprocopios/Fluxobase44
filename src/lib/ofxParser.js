@@ -174,11 +174,34 @@ function parseFlexDate(raw) {
 }
 
 /**
+ * Aplica regras de categorização por palavra-chave a uma transação bancária.
+ * Retorna a categoria correspondente ou null.
+ */
+export function applyCategorizationRules(bankTx, rules = []) {
+  for (const rule of rules) {
+    if (!rule.is_active) continue;
+    if (rule.transaction_type !== "ambos" && rule.transaction_type !== bankTx.type) continue;
+
+    const desc = (bankTx.description || "").toLowerCase();
+    const kw = rule.keyword.toLowerCase();
+
+    let matches = false;
+    if (rule.match_type === "contains") matches = desc.includes(kw);
+    else if (rule.match_type === "starts_with") matches = desc.startsWith(kw);
+    else if (rule.match_type === "ends_with") matches = desc.endsWith(kw);
+    else if (rule.match_type === "exact") matches = desc === kw;
+
+    if (matches) return rule.category;
+  }
+  return null;
+}
+
+/**
  * Tenta casar automaticamente transações bancárias com lançamentos do sistema.
  * Retorna array de matches: { bankTx, systemTx | null, score, status }
  * status: "matched" | "pending"
  */
-export function autoMatch(bankTransactions, systemTransactions) {
+export function autoMatch(bankTransactions, systemTransactions, rules = []) {
   const usedSystemIds = new Set();
 
   return bankTransactions.map((btx) => {

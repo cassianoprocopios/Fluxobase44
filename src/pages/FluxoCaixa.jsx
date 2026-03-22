@@ -130,6 +130,44 @@ export default function FluxoCaixa() {
         </div>
       </div>
 
+      {/* KPI Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
+            <TrendingUp className="w-5 h-5 text-success" />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground font-medium">Total Entradas</p>
+            <p className="text-lg font-bold text-success">{formatCurrency(totalEntradas)}</p>
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+            <TrendingDown className="w-5 h-5 text-destructive" />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground font-medium">Total Saídas</p>
+            <p className="text-lg font-bold text-destructive">{formatCurrency(totalSaidas)}</p>
+          </div>
+        </div>
+        <div className={`bg-card border rounded-xl p-4 flex items-center gap-4 ${totalGeracao >= 0 ? "border-success/30" : "border-destructive/30"}`}>
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${totalGeracao >= 0 ? "bg-success/10" : "bg-destructive/10"}`}>
+            <Droplets className={`w-5 h-5 ${totalGeracao >= 0 ? "text-success" : "text-destructive"}`} />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground font-medium">Geração de Caixa</p>
+            <p className={`text-lg font-bold ${totalGeracao >= 0 ? "text-success" : "text-destructive"}`}>{formatCurrency(totalGeracao)}</p>
+            {selectedMonth === "all" && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {mesesPositivos > 0 && <span className="text-success">{mesesPositivos} positivo{mesesPositivos > 1 ? "s" : ""}</span>}
+                {mesesPositivos > 0 && mesesNegativos > 0 && " · "}
+                {mesesNegativos > 0 && <span className="text-destructive">{mesesNegativos} negativo{mesesNegativos > 1 ? "s" : ""}</span>}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardContent className="pt-6">

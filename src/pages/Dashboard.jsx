@@ -25,6 +25,10 @@ export default function Dashboard() {
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
 
+  const [viewMode, setViewMode] = useState("month"); // "month" | "accumulated"
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+
   const stats = useMemo(() => {
     const thisMonthTxns = transactions.filter((t) => {
       if (!t.date) return false;

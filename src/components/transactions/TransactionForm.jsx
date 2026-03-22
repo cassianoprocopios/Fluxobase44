@@ -206,6 +206,12 @@ export default function TransactionForm({
           placeholder="Detalhe o lançamento..."
           rows={2}
         />
+        <CategorySuggestion
+          description={form.description}
+          transactionType={form.type}
+          existingCategories={categories}
+          onSuggestion={(suggestion) => handleChange("category", suggestion)}
+        />
       </div>
 
       {/* Recurring */}

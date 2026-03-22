@@ -461,6 +461,16 @@ export default function Conciliacao() {
           )}
         </>
       )}
+
+      {/* Bulk Create Modal */}
+      <BulkCreateModal
+        open={bulkCreateModal}
+        onOpenChange={setBulkCreateModal}
+        selectedMatches={matches.filter((m) => selectedIds.has(m.bankTx.id))}
+        categories={categories}
+        onConfirm={handleConfirmBulkCreate}
+        isLoading={isSaving}
+      />
     </div>
   );
 }

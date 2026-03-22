@@ -60,7 +60,17 @@ export default function Conciliacao() {
     setStep("review");
   };
 
-  const handleConfirmMatch = (bankTxId, systemTx) => {
+  const handleConfirmMatch = (bankTxId, systemTx, reset = false) => {
+    if (reset) {
+      setMatches((prev) =>
+        prev.map((m) =>
+          m.bankTx.id === bankTxId
+            ? { ...m, confirmed: false, ignored: false, linkedTx: null, createNew: false, newCategory: null }
+            : m
+        )
+      );
+      return;
+    }
     setMatches((prev) =>
       prev.map((m) =>
         m.bankTx.id === bankTxId

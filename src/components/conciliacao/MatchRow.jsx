@@ -205,7 +205,7 @@ export default function MatchRow({
       </div>
 
       {/* Expanded panel */}
-      {expanded && !confirmed && !ignored && (
+      {expanded && (
         <div className="border-t border-border px-4 pb-4 pt-3 space-y-4">
           {/* Action tabs */}
           <div className="flex gap-2 flex-wrap">

@@ -121,13 +121,60 @@ export default function Dashboard() {
     );
   }
 
+  const periodLabel = viewMode === "accumulated"
+    ? `Acumulado Jan–${MONTHS_PT[selectedMonth]} ${selectedYear}`
+    : `${MONTHS_PT[selectedMonth]} ${selectedYear}`;
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Visão geral financeira — {MONTHS_PT[currentMonth]} {currentYear}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Visão geral financeira — {periodLabel}</p>
+        </div>
+
+        {/* Controls */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Month selector */}
+          <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS_PT.map((m, i) => (
+                <SelectItem key={i} value={String(i)}>{m}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Year selector */}
+          <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[currentYear - 1, currentYear, currentYear + 1].map((y) => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* View mode toggle */}
+          <div className="flex rounded-lg border border-border overflow-hidden text-sm">
+            <button
+              onClick={() => setViewMode("month")}
+              className={`px-3 py-1.5 font-medium transition-colors ${viewMode === "month" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
+            >
+              Mês
+            </button>
+            <button
+              onClick={() => setViewMode("accumulated")}
+              className={`px-3 py-1.5 font-medium transition-colors ${viewMode === "accumulated" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
+            >
+              Acumulado
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -136,16 +183,16 @@ export default function Dashboard() {
           value={formatCurrency(stats.entradas)}
           icon={TrendingUp}
           variant="success"
-          trend={parseFloat(stats.trendEntradas)}
-          trendLabel={`${stats.trendEntradas}% vs mês anterior`}
+          trend={viewMode === "month" ? parseFloat(stats.trendEntradas) : null}
+          trendLabel={viewMode === "month" ? `${stats.trendEntradas}% vs mês anterior` : undefined}
         />
         <KPICard
           title="Saídas"
           value={formatCurrency(stats.saidas)}
           icon={TrendingDown}
           variant="danger"
-          trend={-parseFloat(stats.trendSaidas)}
-          trendLabel={`${stats.trendSaidas}% vs mês anterior`}
+          trend={viewMode === "month" ? -parseFloat(stats.trendSaidas) : null}
+          trendLabel={viewMode === "month" ? `${stats.trendSaidas}% vs mês anterior` : undefined}
         />
         <KPICard
           title="Resultado"
@@ -157,11 +204,7 @@ export default function Dashboard() {
         />
         <KPICard
           title="Transações"
-          value={transactions.filter((t) => {
-            if (!t.date) return false;
-            const d = new Date(t.date);
-            return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
-          }).length}
+          value={stats.txCount}
           icon={Target}
           variant="primary"
         />

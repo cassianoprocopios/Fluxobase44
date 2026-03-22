@@ -14,6 +14,7 @@ import FluxoCaixa from '@/pages/FluxoCaixa';
 import Relatorios from '@/pages/Relatorios';
 import Configuracoes from '@/pages/Configuracoes';
 import Importar from '@/pages/Importar';
+import Recorrentes from '@/pages/Recorrentes';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -45,6 +46,7 @@ const AuthenticatedApp = () => {
         <Route path="/relatorios" element={<Relatorios />} />
         <Route path="/configuracoes" element={<Configuracoes />} />
         <Route path="/importar" element={<Importar />} />
+        <Route path="/recorrentes" element={<Recorrentes />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

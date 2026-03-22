@@ -293,6 +293,14 @@ export default function FluxoCaixa() {
                   <td className="px-4 py-3 text-right">
                     {formatCurrency(filteredData.reduce((s, r) => s + r.saldo, 0))}
                   </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                      totalGeracao > 0 ? "bg-success/10 text-success" : totalGeracao < 0 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
+                    }`}>
+                      {totalGeracao > 0 ? "▲" : totalGeracao < 0 ? "▼" : "–"}
+                      {formatCurrency(Math.abs(totalGeracao))}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-right border-l">
                     {formatCurrency(filteredData[filteredData.length - 1]?.acumulado || 0)}
                   </td>

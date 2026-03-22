@@ -50,6 +50,11 @@ export default function Conciliacao() {
     queryFn: () => base44.entities.Category.list(),
   });
 
+  const { data: rules = [] } = useQuery({
+    queryKey: ["categorizationRules"],
+    queryFn: () => base44.entities.CategorizationRule.list(),
+  });
+
   const { data: me } = useQuery({
     queryKey: ["me"],
     queryFn: () => base44.auth.me(),

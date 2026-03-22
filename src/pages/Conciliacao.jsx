@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-
 import { base44 } from "@/api/base44Client";
 import { autoMatch } from "@/lib/ofxParser";
 import UploadStep from "@/components/conciliacao/UploadStep";
@@ -18,7 +17,6 @@ import {
 import { ArrowLeft, CheckCheck, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
-import { useQuery } from "@tanstack/react-query";
 
 const FILTER_OPTIONS = [
   { value: "all", label: "Todos" },

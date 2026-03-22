@@ -119,13 +119,14 @@ export default function DRE() {
   }
 
   const DRERow = ({ label, monthly, bold, highlight, negative }) => {
-    const total = monthly.reduce((s, v) => s + v, 0);
+    const visibleValues = visibleMonths.map(({ idx }) => monthly[idx] || 0);
+    const total = visibleValues.reduce((s, v) => s + v, 0);
     return (
       <tr className={`${highlight ? "bg-muted/50" : ""} ${bold ? "font-semibold" : ""}`}>
         <td className="px-4 py-2.5 text-sm whitespace-nowrap sticky left-0 bg-card z-10 border-r">
           {label}
         </td>
-        {monthly.map((v, i) => (
+        {visibleValues.map((v, i) => (
           <td
             key={i}
             className={`px-3 py-2.5 text-sm text-right whitespace-nowrap ${
@@ -135,13 +136,15 @@ export default function DRE() {
             {formatCurrency(negative ? -v : v)}
           </td>
         ))}
-        <td
-          className={`px-3 py-2.5 text-sm text-right font-semibold whitespace-nowrap border-l ${
-            negative && total > 0 ? "text-destructive" : total < 0 ? "text-destructive" : ""
-          }`}
-        >
-          {formatCurrency(negative ? -total : total)}
-        </td>
+        {selectedMonth === "all" && (
+          <td
+            className={`px-3 py-2.5 text-sm text-right font-semibold whitespace-nowrap border-l ${
+              negative && total > 0 ? "text-destructive" : total < 0 ? "text-destructive" : ""
+            }`}
+          >
+            {formatCurrency(negative ? -total : total)}
+          </td>
+        )}
       </tr>
     );
   };

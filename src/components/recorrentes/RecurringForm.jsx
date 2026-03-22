@@ -30,7 +30,7 @@ const EMPTY = {
   end_date: "",
 };
 
-export default function RecurringForm({ item, categories, onSubmit, onCancel, isSubmitting }) {
+export default function RecurringForm({ item, categories, costCenters = [], bankAccounts = [], onSubmit, onCancel, isSubmitting }) {
   const [form, setForm] = useState(EMPTY);
 
   useEffect(() => {
@@ -157,21 +157,31 @@ export default function RecurringForm({ item, categories, onSubmit, onCancel, is
         {/* Cost center */}
         <div className="space-y-2">
           <Label>Centro de custo</Label>
-          <Input
-            value={form.cost_center}
-            onChange={(e) => set("cost_center", e.target.value)}
-            placeholder="Ex: Unidade 1"
-          />
+          <Select value={form.cost_center} onValueChange={(v) => set("cost_center", v)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              {costCenters.map((c) => (
+                <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Bank account */}
         <div className="space-y-2">
           <Label>Banco / Conta</Label>
-          <Input
-            value={form.bank_account}
-            onChange={(e) => set("bank_account", e.target.value)}
-            placeholder="Ex: Bradesco"
-          />
+          <Select value={form.bank_account} onValueChange={(v) => set("bank_account", v)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              {bankAccounts.map((b) => (
+                <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Client/Supplier */}

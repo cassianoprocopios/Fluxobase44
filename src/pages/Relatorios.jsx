@@ -50,7 +50,8 @@ export default function Relatorios() {
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
       if (!t.date || t.status === "cancelado") return false;
-      if (t.date < dateFrom || t.date > dateTo) return false;
+      const dateStr = t.date.substring(0, 10);
+      if (dateStr < dateFrom || dateStr > dateTo) return false;
       if (type !== "todos" && t.type !== type) return false;
       return true;
     });

@@ -324,23 +324,84 @@ export default function Conciliacao() {
             </div>
           </div>
 
+          {/* Bulk action bar */}
+          {selectableIds.length > 0 && (
+            <div className="flex items-center gap-3 flex-wrap bg-muted/50 border border-border rounded-xl px-4 py-2.5">
+              {/* Select all toggle */}
+              <button onClick={toggleSelectAll} className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors">
+                {allSelected ? (
+                  <CheckSquare className="w-4 h-4 text-primary" />
+                ) : someSelected ? (
+                  <MinusSquare className="w-4 h-4 text-primary" />
+                ) : (
+                  <Square className="w-4 h-4 text-muted-foreground" />
+                )}
+                {allSelected ? "Desmarcar todos" : `Selecionar todos (${selectableIds.length})`}
+              </button>
+
+              {selectedCount > 0 && (
+                <>
+                  <span className="text-muted-foreground text-xs">|</span>
+                  <span className="text-sm text-muted-foreground">{selectedCount} selecionado{selectedCount > 1 ? "s" : ""}</span>
+                  <div className="flex gap-2 flex-wrap ml-auto">
+                    {selectedMatchedCount > 0 && (
+                      <Button size="sm" variant="outline" onClick={handleBulkConfirmMatched} className="gap-1.5 h-7 text-xs">
+                        <CheckCheck className="w-3.5 h-3.5" />
+                        Aceitar {selectedMatchedCount} sugestão{selectedMatchedCount > 1 ? "ões" : ""}
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline" onClick={handleBulkCreateNew} className="gap-1.5 h-7 text-xs">
+                      <Plus className="w-3.5 h-3.5" />
+                      Criar novos ({selectedCount})
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleBulkIgnore} className="gap-1.5 h-7 text-xs text-muted-foreground">
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Ignorar ({selectedCount})
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Match list */}
           <div className="space-y-3">
             {filteredMatches.length === 0 ? (
               <p className="text-center text-muted-foreground py-12 text-sm">Nenhuma transação neste filtro.</p>
             ) : (
-              filteredMatches.map((match) => (
-                <MatchRow
-                  key={match.bankTx.id}
-                  match={match}
-                  systemTransactions={transactions}
-                  categories={categories}
-                  onConfirmMatch={handleConfirmMatch}
-                  onCreateNew={handleCreateNew}
-                  onIgnore={handleIgnore}
-                  userRole={userRole}
-                />
-              ))
+              filteredMatches.map((match) => {
+                const isSelectable = !match.confirmed && !match.ignored;
+                const isSelected = selectedIds.has(match.bankTx.id);
+                return (
+                  <div key={match.bankTx.id} className="flex items-start gap-2">
+                    {isSelectable ? (
+                      <button
+                        onClick={() => toggleSelect(match.bankTx.id)}
+                        className="mt-4 shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {isSelected ? (
+                          <CheckSquare className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Square className="w-4 h-4" />
+                        )}
+                      </button>
+                    ) : (
+                      <div className="w-4 mt-4 shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <MatchRow
+                        match={match}
+                        systemTransactions={transactions}
+                        categories={categories}
+                        onConfirmMatch={handleConfirmMatch}
+                        onCreateNew={handleCreateNew}
+                        onIgnore={handleIgnore}
+                        userRole={userRole}
+                      />
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
         </>

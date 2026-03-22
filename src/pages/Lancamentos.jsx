@@ -1,0 +1,191 @@
+import React, { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Upload } from "lucide-react";
+import { toast } from "sonner";
+import TransactionForm from "@/components/transactions/TransactionForm";
+import TransactionTable from "@/components/transactions/TransactionTable";
+import TransactionFilters from "@/components/transactions/TransactionFilters";
+import { Link } from "react-router-dom";
+
+export default function Lancamentos() {
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [editingTx, setEditingTx] = useState(null);
+  const [deleteTx, setDeleteTx] = useState(null);
+  const [filters, setFilters] = useState({
+    search: "",
+    type: "todos",
+    status: "todos",
+    month: "",
+  });
+
+  const { data: transactions = [], isLoading } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: () => base44.entities.Transaction.list("-date", 5000),
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => base44.entities.Category.list(),
+  });
+
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const userRole = me?.role || "colaborador";
+
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.Transaction.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      setShowForm(false);
+      toast.success("Lançamento criado!");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Transaction.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      setShowForm(false);
+      setEditingTx(null);
+      toast.success("Lançamento atualizado!");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Transaction.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      setDeleteTx(null);
+      toast.success("Lançamento excluído!");
+    },
+  });
+
+  const filtered = useMemo(() => {
+    return transactions.filter((t) => {
+      if (filters.type !== "todos" && t.type !== filters.type) return false;
+      if (filters.status !== "todos" && t.status !== filters.status) return false;
+      if (filters.month && t.date && !t.date.startsWith(filters.month)) return false;
+      if (
+        filters.search &&
+        !(t.description || "").toLowerCase().includes(filters.search.toLowerCase()) &&
+        !(t.category || "").toLowerCase().includes(filters.search.toLowerCase()) &&
+        !(t.client_supplier || "").toLowerCase().includes(filters.search.toLowerCase())
+      )
+        return false;
+      return true;
+    });
+  }, [transactions, filters]);
+
+  const handleSubmit = (data) => {
+    if (editingTx) {
+      updateMutation.mutate({ id: editingTx.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Lançamentos</h1>
+          <p className="text-sm text-muted-foreground">
+            {filtered.length} lançamentos encontrados
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Link to="/importar">
+            <Button variant="outline" size="sm">
+              <Upload className="w-4 h-4 mr-2" />
+              Importar
+            </Button>
+          </Link>
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditingTx(null);
+              setShowForm(true);
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Lançamento
+          </Button>
+        </div>
+      </div>
+
+      <TransactionFilters
+        filters={filters}
+        setFilters={setFilters}
+        categories={categories}
+      />
+
+      <TransactionTable
+        transactions={filtered}
+        userRole={userRole}
+        onEdit={(t) => {
+          setEditingTx(t);
+          setShowForm(true);
+        }}
+        onDelete={(t) => setDeleteTx(t)}
+      />
+
+      {/* Form Dialog */}
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <TransactionForm
+            transaction={editingTx}
+            categories={categories}
+            onSubmit={handleSubmit}
+            onCancel={() => {
+              setShowForm(false);
+              setEditingTx(null);
+            }}
+            isSubmitting={createMutation.isPending || updateMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTx} onOpenChange={() => setDeleteTx(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir lançamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. O lançamento será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTx && deleteMutation.mutate(deleteTx.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

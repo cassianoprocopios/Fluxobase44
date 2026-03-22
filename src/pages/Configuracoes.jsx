@@ -1,0 +1,279 @@
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Plus, Trash2, Tag, Users } from "lucide-react";
+import { toast } from "sonner";
+import { DRE_ENTRY_GROUPS, DRE_EXIT_GROUPS } from "@/lib/constants";
+
+export default function Configuracoes() {
+  const queryClient = useQueryClient();
+  const [showCatForm, setShowCatForm] = useState(false);
+  const [newCat, setNewCat] = useState({ name: "", type: "entrada", dre_group: "" });
+
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => base44.entities.Category.list(),
+  });
+
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const createCat = useMutation({
+    mutationFn: (data) => base44.entities.Category.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      setShowCatForm(false);
+      setNewCat({ name: "", type: "entrada", dre_group: "" });
+      toast.success("Categoria criada!");
+    },
+  });
+
+  const deleteCat = useMutation({
+    mutationFn: (id) => base44.entities.Category.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success("Categoria excluída!");
+    },
+  });
+
+  const isAdmin = me?.role === "admin";
+  const isGerente = me?.role === "gerente";
+  const canManage = isAdmin || isGerente;
+
+  const entryCats = categories.filter((c) => c.type === "entrada");
+  const exitCats = categories.filter((c) => c.type === "saida");
+
+  const dreGroups = newCat.type === "entrada" ? DRE_ENTRY_GROUPS : DRE_EXIT_GROUPS;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Configurações</h1>
+        <p className="text-sm text-muted-foreground">
+          Gerencie categorias e preferências
+        </p>
+      </div>
+
+      {/* Categories */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Entry Categories */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Tag className="w-4 h-4 text-success" />
+              Categorias de Entrada
+            </CardTitle>
+            {canManage && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setNewCat({ name: "", type: "entrada", dre_group: "" });
+                  setShowCatForm(true);
+                }}
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" />
+                Novo
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Grupo DRE</TableHead>
+                  {canManage && <TableHead className="w-10"></TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {entryCats.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell className="text-sm font-medium">{c.name}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {c.dre_group || "—"}
+                    </TableCell>
+                    {canManage && (
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive"
+                          onClick={() => deleteCat.mutate(c.id)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+                {entryCats.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                      Nenhuma categoria de entrada
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Exit Categories */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Tag className="w-4 h-4 text-destructive" />
+              Categorias de Saída
+            </CardTitle>
+            {canManage && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setNewCat({ name: "", type: "saida", dre_group: "" });
+                  setShowCatForm(true);
+                }}
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" />
+                Novo
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Grupo DRE</TableHead>
+                  {canManage && <TableHead className="w-10"></TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {exitCats.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell className="text-sm font-medium">{c.name}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {c.dre_group || "—"}
+                    </TableCell>
+                    {canManage && (
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive"
+                          onClick={() => deleteCat.mutate(c.id)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+                {exitCats.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                      Nenhuma categoria de saída
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* New Category Dialog */}
+      <Dialog open={showCatForm} onOpenChange={setShowCatForm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nova Categoria</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              createCat.mutate(newCat);
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label>Nome *</Label>
+              <Input
+                value={newCat.name}
+                onChange={(e) => setNewCat({ ...newCat, name: e.target.value })}
+                required
+                placeholder="Ex: Receita c/ Serviços"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <Select
+                value={newCat.type}
+                onValueChange={(v) => setNewCat({ ...newCat, type: v, dre_group: "" })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="entrada">Entrada</SelectItem>
+                  <SelectItem value="saida">Saída</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Grupo DRE</Label>
+              <Select
+                value={newCat.dre_group}
+                onValueChange={(v) => setNewCat({ ...newCat, dre_group: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dreGroups.map((g) => (
+                    <SelectItem key={g} value={g}>{g}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => setShowCatForm(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={createCat.isPending}>
+                {createCat.isPending ? "Salvando..." : "Criar"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

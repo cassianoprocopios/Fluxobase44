@@ -45,7 +45,8 @@ export default function MatchRow({
   const queryClient = useQueryClient();
 
   const wasConfirmed = useRef(confirmed || ignored);
-...
+  const [expanded, setExpanded] = useState(false);
+
   useEffect(() => {
     if (wasConfirmed.current && !confirmed && !ignored) {
       setExpanded(true);

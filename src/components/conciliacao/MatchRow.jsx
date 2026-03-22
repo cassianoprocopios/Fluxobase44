@@ -192,11 +192,7 @@ export default function MatchRow({
           </button>
         ) : (
           <button
-            onClick={() => {
-              // Reabre para reclassificação
-              onConfirmMatch && onConfirmMatch(bankTx.id, null, true); // sinaliza "reset"
-              setExpanded(true);
-            }}
+            onClick={() => onConfirmMatch(bankTx.id, null, true)}
             className="shrink-0 h-8 px-2.5 flex items-center gap-1.5 rounded-lg border border-border hover:bg-muted transition-colors text-xs text-muted-foreground"
           >
             <ChevronDown className="w-3.5 h-3.5" /> Editar

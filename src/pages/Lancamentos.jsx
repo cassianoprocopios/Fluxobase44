@@ -46,6 +46,16 @@ export default function Lancamentos() {
     queryFn: () => base44.entities.Category.list(),
   });
 
+  const { data: costCenters = [] } = useQuery({
+    queryKey: ["costCenters"],
+    queryFn: () => base44.entities.CostCenter.list("name"),
+  });
+
+  const { data: bankAccounts = [] } = useQuery({
+    queryKey: ["bankAccounts"],
+    queryFn: () => base44.entities.BankAccount.list("name"),
+  });
+
   const { data: me } = useQuery({
     queryKey: ["me"],
     queryFn: () => base44.auth.me(),
@@ -156,6 +166,8 @@ export default function Lancamentos() {
           <TransactionForm
             transaction={editingTx}
             categories={categories}
+            costCenters={costCenters}
+            bankAccounts={bankAccounts}
             onSubmit={handleSubmit}
             onCancel={() => {
               setShowForm(false);

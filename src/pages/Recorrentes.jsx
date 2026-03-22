@@ -52,6 +52,16 @@ export default function Recorrentes() {
     queryFn: () => base44.entities.Category.list(),
   });
 
+  const { data: costCenters = [] } = useQuery({
+    queryKey: ["costCenters"],
+    queryFn: () => base44.entities.CostCenter.list("name"),
+  });
+
+  const { data: bankAccounts = [] } = useQuery({
+    queryKey: ["bankAccounts"],
+    queryFn: () => base44.entities.BankAccount.list("name"),
+  });
+
   const { data: me } = useQuery({
     queryKey: ["me"],
     queryFn: () => base44.auth.me(),
@@ -210,6 +220,8 @@ export default function Recorrentes() {
           <RecurringForm
             item={editingItem}
             categories={categories}
+            costCenters={costCenters}
+            bankAccounts={bankAccounts}
             onSubmit={handleSubmit}
             onCancel={() => { setShowForm(false); setEditingItem(null); }}
             isSubmitting={createMutation.isPending || updateMutation.isPending}

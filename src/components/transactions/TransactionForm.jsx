@@ -13,6 +13,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { PAYMENT_METHODS } from "@/lib/constants";
 import { X } from "lucide-react";
+import CategorySuggestion from "./CategorySuggestion";
 
 const EMPTY_FORM = {
   date: new Date().toISOString().split("T")[0],

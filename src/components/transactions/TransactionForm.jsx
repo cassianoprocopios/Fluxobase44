@@ -164,23 +164,6 @@ export default function TransactionForm({
           </Select>
         </div>
 
-        {/* Status */}
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select value={form.status} onValueChange={(v) => handleChange("status", v)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Cost Center */}
         <div className="space-y-2">
           <Label>Centro de Custo</Label>
@@ -211,23 +194,6 @@ export default function TransactionForm({
           </Select>
         </div>
 
-        {/* Client/Supplier */}
-        <div className="space-y-2">
-          <Label>Cliente / Fornecedor</Label>
-          <Input
-            value={form.client_supplier}
-            onChange={(e) => handleChange("client_supplier", e.target.value)}
-          />
-        </div>
-
-        {/* Subcategory */}
-        <div className="space-y-2">
-          <Label>Subcategoria</Label>
-          <Input
-            value={form.subcategory}
-            onChange={(e) => handleChange("subcategory", e.target.value)}
-          />
-        </div>
       </div>
 
       {/* Description */}

@@ -47,6 +47,12 @@ export default function Conciliacao() {
     queryFn: () => base44.entities.Category.list(),
   });
 
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => base44.auth.me(),
+  });
+  const userRole = me?.role || "colaborador";
+
   const handleParsed = (bankTxns, name) => {
     setFileName(name);
     const result = autoMatch(bankTxns, transactions);
@@ -247,6 +253,7 @@ export default function Conciliacao() {
                   onConfirmMatch={handleConfirmMatch}
                   onCreateNew={handleCreateNew}
                   onIgnore={handleIgnore}
+                  userRole={userRole}
                 />
               ))
             )}

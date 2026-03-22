@@ -42,6 +42,7 @@ export default function Conciliacao() {
   const handleFilterChange = (val) => { setFilter(val); setSelectedIds(new Set()); };
   const [isSaving, setIsSaving] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkCreateModal, setBulkCreateModal] = useState(false);
 
   const { data: transactions = [] } = useQuery({
     queryKey: ["transactions"],

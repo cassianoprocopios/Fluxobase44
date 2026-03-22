@@ -33,7 +33,6 @@ export default function Lancamentos() {
   const [filters, setFilters] = useState({
     search: "",
     type: "todos",
-    status: "todos",
     month: "",
   });
 
@@ -96,7 +95,6 @@ export default function Lancamentos() {
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
       if (filters.type !== "todos" && t.type !== filters.type) return false;
-      if (filters.status !== "todos" && t.status !== filters.status) return false;
       if (filters.month && t.date && !t.date.startsWith(filters.month)) return false;
       if (
         filters.search &&

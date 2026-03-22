@@ -40,8 +40,7 @@ export default function TransactionTable({ transactions, onEdit, onDelete, userR
               <TableHead>Categoria</TableHead>
               <TableHead className="hidden md:table-cell">Descrição</TableHead>
               <TableHead className="hidden lg:table-cell">Pagamento</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
               {canEdit && <TableHead className="w-20">Ações</TableHead>}
             </TableRow>
           </TableHeader>

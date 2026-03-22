@@ -37,18 +37,6 @@ export default function TransactionFilters({ filters, setFilters, categories }) 
         </SelectContent>
       </Select>
 
-      <Select value={filters.status} onValueChange={(v) => update("status", v)}>
-        <SelectTrigger className="w-36">
-          <SelectValue placeholder="Status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="todos">Todos</SelectItem>
-          <SelectItem value="pago">Pago</SelectItem>
-          <SelectItem value="em_aberto">Em Aberto</SelectItem>
-          <SelectItem value="cancelado">Cancelado</SelectItem>
-        </SelectContent>
-      </Select>
-
       <Input
         type="month"
         value={filters.month}

@@ -81,6 +81,12 @@ export default function FluxoCaixa() {
     ? chartData
     : chartData.filter((_, idx) => idx === parseInt(selectedMonth));
 
+  const totalEntradas = filteredData.reduce((s, r) => s + r.entradas, 0);
+  const totalSaidas = filteredData.reduce((s, r) => s + r.saidas, 0);
+  const totalGeracao = filteredData.reduce((s, r) => s + r.geracaoCaixa, 0);
+  const mesesPositivos = filteredData.filter((r) => r.geracaoCaixa > 0).length;
+  const mesesNegativos = filteredData.filter((r) => r.geracaoCaixa < 0).length;
+
   if (isLoading) {
     return (
       <div className="space-y-4">

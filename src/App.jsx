@@ -16,6 +16,7 @@ import Configuracoes from '@/pages/Configuracoes';
 import Importar from '@/pages/Importar';
 import Recorrentes from '@/pages/Recorrentes';
 import Conciliacao from '@/pages/Conciliacao';
+import RegrasCategorizacao from '@/pages/RegrasCategorizacao';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();

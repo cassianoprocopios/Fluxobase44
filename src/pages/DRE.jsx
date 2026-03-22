@@ -246,25 +246,30 @@ export default function DRE() {
                   <td className="px-4 py-3 text-sm font-bold sticky left-0 bg-primary/5 z-10 border-r">
                     RESULTADO LÍQUIDO
                   </td>
-                  {dreData.resultado.map((v, i) => (
+                  {visibleMonths.map(({ idx }) => {
+                    const v = dreData.resultado[idx] || 0;
+                    return (
+                      <td
+                        key={idx}
+                        className={`px-3 py-3 text-sm text-right font-bold ${
+                          v < 0 ? "text-destructive" : "text-success"
+                        }`}
+                      >
+                        {formatCurrency(v)}
+                      </td>
+                    );
+                  })}
+                  {selectedMonth === "all" && (
                     <td
-                      key={i}
-                      className={`px-3 py-3 text-sm text-right font-bold ${
-                        v < 0 ? "text-destructive" : "text-success"
+                      className={`px-3 py-3 text-sm text-right font-bold border-l ${
+                        dreData.resultado.reduce((s, v) => s + v, 0) < 0
+                          ? "text-destructive"
+                          : "text-success"
                       }`}
                     >
-                      {formatCurrency(v)}
+                      {formatCurrency(dreData.resultado.reduce((s, v) => s + v, 0))}
                     </td>
-                  ))}
-                  <td
-                    className={`px-3 py-3 text-sm text-right font-bold border-l ${
-                      dreData.resultado.reduce((s, v) => s + v, 0) < 0
-                        ? "text-destructive"
-                        : "text-success"
-                    }`}
-                  >
-                    {formatCurrency(dreData.resultado.reduce((s, v) => s + v, 0))}
-                  </td>
+                  )}
                 </tr>
               </tbody>
             </table>

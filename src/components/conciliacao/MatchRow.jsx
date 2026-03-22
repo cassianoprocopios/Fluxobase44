@@ -169,23 +169,24 @@ export default function MatchRow({
         <div className="border-t border-border px-4 pb-4 pt-3 space-y-4">
           {/* Action tabs */}
           <div className="flex gap-2 flex-wrap">
-            {[
-              { value: "link", label: "Vincular lançamento", icon: Link2 },
-              { value: "create", label: "Criar novo", icon: Plus },
-              { value: "ignore", label: "Ignorar", icon: X },
-            ].map(({ value, label, icon: Icon }) => (
-              <button
-                key={value}
-                onClick={() => setAction(value)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                  action === value
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border hover:bg-muted text-foreground"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" /> {label}
-              </button>
-            ))}
+            <button
+              onClick={() => setAction("link")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${action === "link" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted text-foreground"}`}
+            >
+              <Link2 className="w-3.5 h-3.5" /> Vincular lançamento
+            </button>
+            <button
+              onClick={() => setAction("create")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${action === "create" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted text-foreground"}`}
+            >
+              <Plus className="w-3.5 h-3.5" /> Criar novo
+            </button>
+            <button
+              onClick={() => setAction("ignore")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${action === "ignore" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted text-foreground"}`}
+            >
+              <X className="w-3.5 h-3.5" /> Ignorar
+            </button>
           </div>
 
           {/* Link: search + select */}

@@ -35,15 +35,23 @@ export default function Conciliacao() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { state: concState, updateState: updateConcState } = useConciliation();
 
-  const [step, setStep] = useState("upload"); // "upload" | "review"
-  const [fileName, setFileName] = useState("");
-  const [matches, setMatches] = useState([]);
-  const [filter, setFilter] = useState("all");
-  const handleFilterChange = (val) => { setFilter(val); setSelectedIds(new Set()); };
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkCreateModal, setBulkCreateModal] = useState(false);
+
+  // Usar valores do Context, ou valores padrão se não estiverem salvos
+  const step = concState.step || "upload";
+  const fileName = concState.fileName || "";
+  const matches = concState.matches || [];
+  const filter = concState.filter || "all";
+  const selectedIds = concState.selectedIds || new Set();
+
+  const setStep = (val) => updateConcState({ step: val });
+  const setFileName = (val) => updateConcState({ fileName: val });
+  const setMatches = (val) => updateConcState({ matches: val });
+  const setFilter = (val) => { updateConcState({ filter: val, selectedIds: new Set() }); };
+  const setSelectedIds = (val) => updateConcState({ selectedIds: val });
 
   const { data: transactions = [] } = useQuery({
     queryKey: ["transactions"],

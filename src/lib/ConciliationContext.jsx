@@ -17,11 +17,18 @@ export function ConciliationProvider({ children }) {
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      setState({
-        ...parsed,
-        selectedIds: new Set(parsed.selectedIds || []),
-      });
+      try {
+        const parsed = JSON.parse(saved);
+        setState({
+          step: parsed.step || "upload",
+          fileName: parsed.fileName || "",
+          matches: parsed.matches || [],
+          filter: parsed.filter || "all",
+          selectedIds: new Set(parsed.selectedIds || []),
+        });
+      } catch (e) {
+        console.error("Erro ao restaurar sessão de conciliação:", e);
+      }
     }
   }, []);
 

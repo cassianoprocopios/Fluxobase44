@@ -39,6 +39,7 @@ export const DRE_ENTRY_GROUPS = [
   "Receita Operacional",
   "Receita Financeira",
   "Outras Receitas",
+  "Não DRE",
 ];
 
 export const DRE_EXIT_GROUPS = [

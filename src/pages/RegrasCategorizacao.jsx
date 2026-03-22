@@ -87,6 +87,11 @@ export default function RegrasCategorizacao() {
     return categories.filter((c) => c.type === type);
   };
 
+  const filteredRules = rules.filter((r) =>
+    r.keyword.toLowerCase().includes(search.toLowerCase()) ||
+    r.category.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Header */}

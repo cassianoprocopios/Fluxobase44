@@ -6,7 +6,8 @@ import {
   DollarSign,
   TrendingUp,
   TrendingDown,
-  Target,
+  Percent,
+  Droplets,
 } from "lucide-react";
 import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants";
 import KPICard from "@/components/dashboard/KPICard";

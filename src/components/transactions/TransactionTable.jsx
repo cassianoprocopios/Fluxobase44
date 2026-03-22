@@ -14,17 +14,6 @@ import { formatCurrency } from "@/lib/constants";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const statusBadge = {
-  pago: "bg-success/10 text-success border-success/20",
-  em_aberto: "bg-primary/10 text-primary border-primary/20",
-  cancelado: "bg-muted text-muted-foreground border-border",
-};
-
-const statusLabel = {
-  pago: "Pago",
-  em_aberto: "Em Aberto",
-  cancelado: "Cancelado",
-};
 
 export default function TransactionTable({ transactions, onEdit, onDelete, userRole }) {
   const canEdit = userRole === "admin" || userRole === "gerente";

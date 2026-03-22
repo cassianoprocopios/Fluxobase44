@@ -18,7 +18,6 @@ const EMPTY_FORM = {
   date: new Date().toISOString().split("T")[0],
   type: "entrada",
   category: "",
-  subcategory: "",
   description: "",
   amount: "",
   payment_method: "pix",

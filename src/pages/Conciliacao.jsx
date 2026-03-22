@@ -35,6 +35,7 @@ export default function Conciliacao() {
   const [fileName, setFileName] = useState("");
   const [matches, setMatches] = useState([]);
   const [filter, setFilter] = useState("all");
+  const handleFilterChange = (val) => { setFilter(val); setSelectedIds(new Set()); };
   const [isSaving, setIsSaving] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
 

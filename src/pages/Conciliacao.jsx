@@ -160,6 +160,7 @@ export default function Conciliacao() {
               ? "Importe um extrato OFX ou CSV para comparar com os lançamentos do sistema."
               : `Extrato: ${fileName} · ${matches.length} transações importadas`}
           </p>
+          </div>
         </div>
 
         {step === "review" && (

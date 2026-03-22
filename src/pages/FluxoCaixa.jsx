@@ -263,6 +263,18 @@ export default function FluxoCaixa() {
                     <td className={`px-4 py-2.5 text-right font-medium ${row.saldo >= 0 ? "text-success" : "text-destructive"}`}>
                       {formatCurrency(row.saldo)}
                     </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        row.geracaoCaixa > 0
+                          ? "bg-success/10 text-success"
+                          : row.geracaoCaixa < 0
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-muted text-muted-foreground"
+                      }`}>
+                        {row.geracaoCaixa > 0 ? "▲" : row.geracaoCaixa < 0 ? "▼" : "–"}
+                        {formatCurrency(Math.abs(row.geracaoCaixa))}
+                      </span>
+                    </td>
                     <td className={`px-4 py-2.5 text-right font-semibold border-l ${row.acumulado >= 0 ? "text-success" : "text-destructive"}`}>
                       {formatCurrency(row.acumulado)}
                     </td>

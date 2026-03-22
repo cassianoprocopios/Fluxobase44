@@ -22,10 +22,8 @@ const EMPTY_FORM = {
   description: "",
   amount: "",
   payment_method: "pix",
-  status: "pago",
   cost_center: "",
   bank_account: "",
-  client_supplier: "",
   is_recurring: false,
   dre_classification: "",
 };

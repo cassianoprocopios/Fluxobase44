@@ -79,14 +79,6 @@ export default function TransactionTable({ transactions, onEdit, onDelete, userR
                   <TableCell className="text-sm hidden lg:table-cell capitalize">
                     {t.payment_method?.replace("_", " ") || "—"}
                   </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={`text-xs ${statusBadge[t.status] || ""}`}
-                    >
-                      {statusLabel[t.status] || t.status}
-                    </Badge>
-                  </TableCell>
                   <TableCell
                     className={`text-sm font-semibold text-right ${
                       t.type === "entrada" ? "text-success" : "text-destructive"

@@ -369,46 +369,64 @@ export default function Conciliacao() {
             </div>
           )}
 
-          {/* Match list */}
-          <div className="space-y-3">
-            {filteredMatches.length === 0 ? (
-              <p className="text-center text-muted-foreground py-12 text-sm">Nenhuma transação neste filtro.</p>
-            ) : (
-              filteredMatches.map((match) => {
-                const isSelectable = !match.confirmed && !match.ignored;
-                const isSelected = selectedIds.has(match.bankTx.id);
-                return (
-                  <div key={match.bankTx.id} className="flex items-start gap-2">
-                    {isSelectable ? (
-                      <button
-                        onClick={() => toggleSelect(match.bankTx.id)}
-                        className="mt-4 shrink-0 text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        {isSelected ? (
-                          <CheckSquare className="w-4 h-4 text-primary" />
-                        ) : (
-                          <Square className="w-4 h-4" />
-                        )}
-                      </button>
-                    ) : (
-                      <div className="w-4 mt-4 shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <MatchRow
-                        match={match}
-                        systemTransactions={transactions}
-                        categories={categories}
-                        onConfirmMatch={handleConfirmMatch}
-                        onCreateNew={handleCreateNew}
-                        onIgnore={handleIgnore}
-                        userRole={userRole}
-                      />
+          {/* Match list split by type */}
+          {filteredMatches.length === 0 ? (
+            <p className="text-center text-muted-foreground py-12 text-sm">Nenhuma transação neste filtro.</p>
+          ) : (
+            <div className="space-y-8">
+              {[
+                { label: "Entradas", type: "entrada", items: entradasFiltered, color: "text-success", bg: "bg-success/5 border-success/20" },
+                { label: "Saídas", type: "saida", items: saidasFiltered, color: "text-destructive", bg: "bg-destructive/5 border-destructive/20" },
+              ].map(({ label, items, color, bg }) =>
+                items.length === 0 ? null : (
+                  <div key={label} className="space-y-3">
+                    {/* Group header */}
+                    <div className={`flex items-center gap-3 px-3 py-2 rounded-lg border ${bg}`}>
+                      <span className={`text-xs font-bold uppercase tracking-wider ${color}`}>{label}</span>
+                      <span className="text-xs text-muted-foreground">{items.length} transação{items.length > 1 ? "ões" : ""}</span>
+                    </div>
+
+                    {/* Rows */}
+                    <div className="space-y-3">
+                      {items.map((match) => {
+                        const isSelectable = !match.confirmed && !match.ignored;
+                        const isSelected = selectedIds.has(match.bankTx.id);
+                        return (
+                          <div key={match.bankTx.id} className="flex items-start gap-2">
+                            {isSelectable ? (
+                              <button
+                                onClick={() => toggleSelect(match.bankTx.id)}
+                                className="mt-4 shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                              >
+                                {isSelected ? (
+                                  <CheckSquare className="w-4 h-4 text-primary" />
+                                ) : (
+                                  <Square className="w-4 h-4" />
+                                )}
+                              </button>
+                            ) : (
+                              <div className="w-4 mt-4 shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <MatchRow
+                                match={match}
+                                systemTransactions={transactions}
+                                categories={categories}
+                                onConfirmMatch={handleConfirmMatch}
+                                onCreateNew={handleCreateNew}
+                                onIgnore={handleIgnore}
+                                userRole={userRole}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                );
-              })
-            )}
-          </div>
+                )
+              )}
+            </div>
+          )}
         </>
       )}
     </div>

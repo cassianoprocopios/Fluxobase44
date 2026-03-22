@@ -50,6 +50,7 @@ const AuthenticatedApp = () => {
         <Route path="/importar" element={<Importar />} />
         <Route path="/recorrentes" element={<Recorrentes />} />
         <Route path="/conciliacao" element={<Conciliacao />} />
+        <Route path="/regras-categorizacao" element={<RegrasCategorizacao />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { PAYMENT_METHODS, STATUS_OPTIONS } from "@/lib/constants";
+import { PAYMENT_METHODS } from "@/lib/constants";
 import { X } from "lucide-react";
 
 const EMPTY_FORM = {

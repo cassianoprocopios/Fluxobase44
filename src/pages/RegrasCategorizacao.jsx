@@ -40,6 +40,7 @@ export default function RegrasCategorizacao() {
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
 
   const { data: rules = [], isLoading } = useQuery({
     queryKey: ["categorizationRules"],

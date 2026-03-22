@@ -59,13 +59,16 @@ export const MONTHS_PT = [
 export function normalizeTransaction(t) {
   if (!t) return t;
   const amount = parseFloat(t.amount) || 0;
+  // Normalizar data: remover horário para evitar problemas de fuso
+  const date = t.date ? t.date.substring(0, 10) : t.date;
   // Se já tem type correto (entrada/saida), usa o amount absoluto
   if (t.type === "entrada" || t.type === "saida") {
-    return { ...t, amount: Math.abs(amount) };
+    return { ...t, date, amount: Math.abs(amount) };
   }
   // Dados importados: amount negativo = saida, positivo = entrada
   return {
     ...t,
+    date,
     type: amount >= 0 ? "entrada" : "saida",
     amount: Math.abs(amount),
   };

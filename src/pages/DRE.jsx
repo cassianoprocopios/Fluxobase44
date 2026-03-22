@@ -100,7 +100,11 @@ export default function DRE() {
 
     const resultado = totalEntradas.map((v, i) => v - totalSaidas[i]);
 
-    return { entryRows, exitRows, totalEntradas, totalSaidas, resultado };
+    const margem = totalEntradas.map((entrada, i) =>
+      entrada > 0 ? (resultado[i] / entrada) * 100 : 0
+    );
+
+    return { entryRows, exitRows, totalEntradas, totalSaidas, resultado, margem };
   }, [transactions, categories, selectedYear]);
 
   const years = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));

@@ -232,6 +232,11 @@ export default function Conciliacao() {
   };
 
   const handleBulkCreateNew = () => {
+    const selectedMatches = matches.filter((m) => selectedIds.has(m.bankTx.id));
+    setBulkCreateModal(true);
+  };
+
+  const handleConfirmBulkCreate = (category) => {
     setMatches((prev) =>
       prev.map((m) =>
         selectedIds.has(m.bankTx.id) && !m.confirmed && !m.ignored
@@ -240,12 +245,13 @@ export default function Conciliacao() {
               confirmed: true,
               createNew: true,
               linkedTx: null,
-              newCategory: m.suggestedCategory || (m.bankTx.type === "entrada" ? "Outras Receitas" : "Outras Despesas"),
+              newCategory: category,
             }
           : m
       )
     );
     setSelectedIds(new Set());
+    setBulkCreateModal(false);
   };
 
   const selectedCount = selectedIds.size;

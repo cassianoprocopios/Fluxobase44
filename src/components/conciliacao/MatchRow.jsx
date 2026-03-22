@@ -35,16 +35,23 @@ export default function MatchRow({
   onConfirmMatch,
   onCreateNew,
   onIgnore,
+  userRole,
 }) {
   const { bankTx, systemTx, status } = match;
   const confirmed = match.confirmed;
   const ignored = match.ignored;
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [expanded, setExpanded] = useState(false);
   const [action, setAction] = useState(status === "matched" ? "link" : null);
   const [selectedId, setSelectedId] = useState(systemTx?.id || "");
   const [search, setSearch] = useState("");
   const [newCategory, setNewCategory] = useState("");
+  const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [isSavingCat, setIsSavingCat] = useState(false);
 
   // Filter candidates by search
   const candidates = useMemo(() => {

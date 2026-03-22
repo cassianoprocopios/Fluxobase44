@@ -38,6 +38,7 @@ export default function MatchRow({
   userRole,
 }) {
   const { bankTx, systemTx, status } = match;
+  const suggestedCategory = match.suggestedCategory || null;
   const confirmed = match.confirmed;
   const ignored = match.ignored;
 

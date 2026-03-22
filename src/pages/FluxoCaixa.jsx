@@ -128,7 +128,7 @@ export default function FluxoCaixa() {
             <h3 className="text-sm font-semibold mb-4">Entradas vs Saídas</h3>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} barGap={4}>
+                <BarChart data={filteredData} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="month" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
@@ -147,7 +147,7 @@ export default function FluxoCaixa() {
             <h3 className="text-sm font-semibold mb-4">Saldo Acumulado</h3>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
+                <AreaChart data={filteredData}>
                   <defs>
                     <linearGradient id="acumGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -191,7 +191,7 @@ export default function FluxoCaixa() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {chartData.map((row) => (
+                {filteredData.map((row) => (
                   <tr key={row.month} className="hover:bg-muted/30">
                     <td className="px-4 py-2.5 font-medium sticky left-0 bg-card z-10 border-r">
                       {row.month}
@@ -215,16 +215,16 @@ export default function FluxoCaixa() {
                     TOTAL
                   </td>
                   <td className="px-4 py-3 text-right text-success">
-                    {formatCurrency(chartData.reduce((s, r) => s + r.entradas, 0))}
+                    {formatCurrency(filteredData.reduce((s, r) => s + r.entradas, 0))}
                   </td>
                   <td className="px-4 py-3 text-right text-destructive">
-                    {formatCurrency(chartData.reduce((s, r) => s + r.saidas, 0))}
+                    {formatCurrency(filteredData.reduce((s, r) => s + r.saidas, 0))}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {formatCurrency(chartData.reduce((s, r) => s + r.saldo, 0))}
+                    {formatCurrency(filteredData.reduce((s, r) => s + r.saldo, 0))}
                   </td>
                   <td className="px-4 py-3 text-right border-l">
-                    {formatCurrency(chartData[chartData.length - 1]?.acumulado || 0)}
+                    {formatCurrency(filteredData[filteredData.length - 1]?.acumulado || 0)}
                   </td>
                 </tr>
               </tbody>

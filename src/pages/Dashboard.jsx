@@ -46,7 +46,9 @@ export default function Dashboard() {
       const entradas = sum(accTxns, "entrada");
       const saidas = sum(accTxns, "saida");
       const resultado = entradas - saidas;
-      return { entradas, saidas, resultado, trendEntradas: 0, trendSaidas: 0, txCount: accTxns.length };
+      const margem = entradas > 0 ? (resultado / entradas) * 100 : 0;
+      const geracaoCaixa = entradas - saidas;
+      return { entradas, saidas, resultado, margem, geracaoCaixa, trendEntradas: 0, trendSaidas: 0, txCount: accTxns.length };
     }
 
     // Modo mês: apenas o mês selecionado

@@ -5,6 +5,7 @@ import { autoMatch } from "@/lib/ofxParser";
 import UploadStep from "@/components/conciliacao/UploadStep";
 import MatchRow from "@/components/conciliacao/MatchRow";
 import ConciliacaoSummary from "@/components/conciliacao/ConciliacaoSummary";
+import BulkCreateModal from "@/components/conciliacao/BulkCreateModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {

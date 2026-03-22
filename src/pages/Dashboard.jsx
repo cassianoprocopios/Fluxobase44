@@ -185,7 +185,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          title="Entradas"
+          title="Receita (Entradas)"
           value={formatCurrency(stats.entradas)}
           icon={TrendingUp}
           variant="success"
@@ -193,7 +193,7 @@ export default function Dashboard() {
           trendLabel={viewMode === "month" ? `${stats.trendEntradas}% vs mês anterior` : undefined}
         />
         <KPICard
-          title="Saídas"
+          title="Despesas (Saídas)"
           value={formatCurrency(stats.saidas)}
           icon={TrendingDown}
           variant="danger"
@@ -201,18 +201,18 @@ export default function Dashboard() {
           trendLabel={viewMode === "month" ? `${stats.trendSaidas}% vs mês anterior` : undefined}
         />
         <KPICard
-          title="Resultado"
-          value={formatCurrency(stats.resultado)}
-          icon={DollarSign}
-          variant={stats.resultado >= 0 ? "success" : "danger"}
-          trend={stats.resultado}
-          trendLabel={stats.resultado >= 0 ? "Positivo" : "Negativo"}
+          title="Margem Líquida"
+          value={`${stats.margem.toFixed(1)}%`}
+          icon={Percent}
+          variant={stats.margem >= 0 ? "success" : "danger"}
+          trendLabel={stats.margem >= 0 ? `Resultado: ${formatCurrency(stats.resultado)}` : `Prejuízo: ${formatCurrency(stats.resultado)}`}
         />
         <KPICard
-          title="Transações"
-          value={stats.txCount}
-          icon={Target}
-          variant="primary"
+          title="Geração de Caixa"
+          value={formatCurrency(stats.geracaoCaixa)}
+          icon={Droplets}
+          variant={stats.geracaoCaixa >= 0 ? "success" : "danger"}
+          trendLabel={stats.geracaoCaixa >= 0 ? "Caixa positivo no período" : "Queima de caixa no período"}
         />
       </div>
 

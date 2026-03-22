@@ -48,7 +48,7 @@ export default function RecentTransactions({ transactions = [] }) {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {t.date
-                        ? format(new Date(t.date), "dd MMM", { locale: ptBR })
+                        ? (() => { try { return format(new Date(t.date.substring(0,10)), "dd MMM", { locale: ptBR }); } catch { return t.date.substring(0,10); } })()
                         : "—"}{" "}
                       · {t.category}
                     </p>

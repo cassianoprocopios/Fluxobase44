@@ -30,24 +30,37 @@ export default function Dashboard() {
   const [selectedYear, setSelectedYear] = useState(currentYear);
 
   const stats = useMemo(() => {
+    const sum = (arr, type) =>
+      arr.filter((t) => t.type === type && t.status !== "cancelado")
+         .reduce((s, t) => s + (t.amount || 0), 0);
+
+    if (viewMode === "accumulated") {
+      // Acumulado: tudo até o mês selecionado (inclusive) no ano selecionado
+      const accTxns = transactions.filter((t) => {
+        if (!t.date) return false;
+        const d = new Date(t.date);
+        return d.getFullYear() === selectedYear && d.getMonth() <= selectedMonth;
+      });
+      const entradas = sum(accTxns, "entrada");
+      const saidas = sum(accTxns, "saida");
+      const resultado = entradas - saidas;
+      return { entradas, saidas, resultado, trendEntradas: 0, trendSaidas: 0, txCount: accTxns.length };
+    }
+
+    // Modo mês: apenas o mês selecionado
     const thisMonthTxns = transactions.filter((t) => {
       if (!t.date) return false;
       const d = new Date(t.date);
-      return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+      return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
     });
 
     const lastMonthTxns = transactions.filter((t) => {
       if (!t.date) return false;
       const d = new Date(t.date);
-      const lm = currentMonth === 0 ? 11 : currentMonth - 1;
-      const ly = currentMonth === 0 ? currentYear - 1 : currentYear;
+      const lm = selectedMonth === 0 ? 11 : selectedMonth - 1;
+      const ly = selectedMonth === 0 ? selectedYear - 1 : selectedYear;
       return d.getFullYear() === ly && d.getMonth() === lm;
     });
-
-    const sum = (arr, type) =>
-      arr
-        .filter((t) => t.type === type && t.status !== "cancelado")
-        .reduce((s, t) => s + (t.amount || 0), 0);
 
     const entradas = sum(thisMonthTxns, "entrada");
     const saidas = sum(thisMonthTxns, "saida");
@@ -56,17 +69,11 @@ export default function Dashboard() {
     const entradasLast = sum(lastMonthTxns, "entrada");
     const saidasLast = sum(lastMonthTxns, "saida");
 
-    const trendEntradas =
-      entradasLast > 0
-        ? (((entradas - entradasLast) / entradasLast) * 100).toFixed(1)
-        : 0;
-    const trendSaidas =
-      saidasLast > 0
-        ? (((saidas - saidasLast) / saidasLast) * 100).toFixed(1)
-        : 0;
+    const trendEntradas = entradasLast > 0 ? (((entradas - entradasLast) / entradasLast) * 100).toFixed(1) : 0;
+    const trendSaidas = saidasLast > 0 ? (((saidas - saidasLast) / saidasLast) * 100).toFixed(1) : 0;
 
-    return { entradas, saidas, resultado, trendEntradas, trendSaidas };
-  }, [transactions, currentYear, currentMonth]);
+    return { entradas, saidas, resultado, trendEntradas, trendSaidas, txCount: thisMonthTxns.length };
+  }, [transactions, selectedYear, selectedMonth, viewMode]);
 
   const monthlyData = useMemo(() => {
     const data = [];

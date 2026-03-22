@@ -266,23 +266,72 @@ export default function MatchRow({
 
           {/* Create new: choose category */}
           {action === "create" && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <p className="text-xs text-muted-foreground font-medium">Categoria para o novo lançamento:</p>
-              <Select
-                value={newCategory || filteredCategories[0]?.name || ""}
-                onValueChange={setNewCategory}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione a categoria…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredCategories.map((c) => (
-                    <SelectItem key={c.id || c.name} value={c.name}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2 items-center">
+                <Select
+                  value={newCategory || filteredCategories[0]?.name || ""}
+                  onValueChange={(v) => { setNewCategory(v); setShowNewCategoryForm(false); }}
+                  className="flex-1"
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Selecione a categoria…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredCategories.length === 0 ? (
+                      <div className="py-3 text-center text-sm text-muted-foreground">Nenhuma categoria cadastrada</div>
+                    ) : (
+                      filteredCategories.map((c) => (
+                        <SelectItem key={c.id || c.name} value={c.name}>{c.name}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {canManageCategories && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 gap-1.5"
+                    onClick={() => setShowNewCategoryForm((v) => !v)}
+                  >
+                    <Tag className="w-3.5 h-3.5" />
+                    Nova categoria
+                  </Button>
+                )}
+              </div>
+
+              {/* Inline new category form — only for gerente/admin */}
+              {showNewCategoryForm && canManageCategories && (
+                <div className="bg-muted/40 border border-border rounded-lg p-3 space-y-2">
+                  <Label className="text-xs font-medium">Nome da nova categoria ({bankTx.type === "entrada" ? "Entrada" : "Saída"})</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      className="h-8 text-sm flex-1"
+                      placeholder="Ex: Serviços especializados"
+                      value={newCatName}
+                      onChange={(e) => setNewCatName(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSaveNewCategory()}
+                    />
+                    <Button size="sm" className="h-8 shrink-0" onClick={handleSaveNewCategory} disabled={isSavingCat || !newCatName.trim()}>
+                      {isSavingCat ? "…" : <Check className="w-3.5 h-3.5" />}
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-8 shrink-0" onClick={() => { setShowNewCategoryForm(false); setNewCatName(""); }}>
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">A categoria será salva e ficará disponível em todo o sistema.</p>
+                </div>
+              )}
+
+              {!canManageCategories && filteredCategories.length === 0 && (
+                <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/20 rounded px-2 py-1">
+                  ⚠ Nenhuma categoria encontrada. Solicite ao gerente ou admin que cadastre uma categoria antes de continuar.
+                </p>
+              )}
+
               <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-2.5">
-                Cria lançamento de <strong>{formatCurrency(bankTx.amount)}</strong> em <strong>{formatDate(bankTx.date)}</strong> como <strong>Pago</strong>. Editável depois em Lançamentos.
+                Cria lançamento de <strong>{formatCurrency(bankTx.amount)}</strong> em <strong>{formatDate(bankTx.date)}</strong>. Editável depois em Lançamentos.
               </p>
             </div>
           )}

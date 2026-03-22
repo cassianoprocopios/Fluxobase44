@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useConciliation } from "@/lib/ConciliationContext";
 import { autoMatch } from "@/lib/ofxParser";
 import UploadStep from "@/components/conciliacao/UploadStep";
 import MatchRow from "@/components/conciliacao/MatchRow";

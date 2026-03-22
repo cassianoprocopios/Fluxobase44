@@ -144,7 +144,9 @@ export default function FluxoCaixa() {
 
         <Card>
           <CardContent className="pt-6">
-            <h3 className="text-sm font-semibold mb-4">Saldo Acumulado</h3>
+            <h3 className="text-sm font-semibold mb-4">
+              {selectedMonth === "all" ? "Saldo Acumulado" : "Saldo do Mês"}
+            </h3>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={filteredData}>

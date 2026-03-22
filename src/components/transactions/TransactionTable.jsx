@@ -69,9 +69,9 @@ export default function TransactionTable({ transactions, onEdit, onDelete, userR
                     </div>
                   </TableCell>
                   <TableCell className="text-sm">
-                    {t.date
+                    {t.date && !isNaN(new Date(t.date.substring(0, 10)).getTime())
                       ? format(new Date(t.date.substring(0, 10)), "dd/MM/yy", { locale: ptBR })
-                      : "—"}
+                      : t.date?.substring(0, 10) || "—"}
                   </TableCell>
                   <TableCell className="text-sm font-medium">{t.category}</TableCell>
                   <TableCell className="text-sm text-muted-foreground hidden md:table-cell max-w-[200px] truncate">

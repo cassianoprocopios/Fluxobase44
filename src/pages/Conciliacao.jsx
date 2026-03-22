@@ -234,7 +234,7 @@ export default function Conciliacao() {
               confirmed: true,
               createNew: true,
               linkedTx: null,
-              newCategory: m.bankTx.type === "entrada" ? "Outras Receitas" : "Outras Despesas",
+              newCategory: m.suggestedCategory || (m.bankTx.type === "entrada" ? "Outras Receitas" : "Outras Despesas"),
             }
           : m
       )

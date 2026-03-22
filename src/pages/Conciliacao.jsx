@@ -62,11 +62,11 @@ export default function Conciliacao() {
     );
   };
 
-  const handleCreateNew = (bankTx) => {
+  const handleCreateNew = (bankTx, category) => {
     setMatches((prev) =>
       prev.map((m) =>
         m.bankTx.id === bankTx.id
-          ? { ...m, confirmed: true, createNew: true, linkedTx: null }
+          ? { ...m, confirmed: true, createNew: true, linkedTx: null, newCategory: category }
           : m
       )
     );
@@ -102,11 +102,10 @@ export default function Conciliacao() {
 
     for (const m of toCreate) {
       const btx = m.bankTx;
-      const defaultCat = categories.find((c) => c.type === btx.type);
       await base44.entities.Transaction.create({
         date: btx.date,
         type: btx.type,
-        category: defaultCat?.name || (btx.type === "entrada" ? "Outras Receitas" : "Outras Despesas"),
+        category: m.newCategory || (btx.type === "entrada" ? "Outras Receitas" : "Outras Despesas"),
         description: btx.description,
         amount: btx.amount,
         status: "pago",
@@ -237,6 +236,7 @@ export default function Conciliacao() {
                   key={match.bankTx.id}
                   match={match}
                   systemTransactions={transactions}
+                  categories={categories}
                   onConfirmMatch={handleConfirmMatch}
                   onCreateNew={handleCreateNew}
                   onIgnore={handleIgnore}

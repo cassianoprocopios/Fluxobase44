@@ -306,7 +306,7 @@ export default function Conciliacao() {
                 return (
                   <button
                     key={opt.value}
-                    onClick={() => setFilter(opt.value)}
+                    onClick={() => handleFilterChange(opt.value)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 ${
                       filter === opt.value
                         ? "bg-primary text-primary-foreground border-primary"

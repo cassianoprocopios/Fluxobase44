@@ -263,17 +263,44 @@ export default function DRE() {
                       </td>
                     );
                   })}
-                  {selectedMonth === "all" && (
-                    <td
-                      className={`px-3 py-3 text-sm text-right font-bold border-l ${
-                        dreData.resultado.reduce((s, v) => s + v, 0) < 0
-                          ? "text-destructive"
-                          : "text-success"
-                      }`}
-                    >
-                      {formatCurrency(dreData.resultado.reduce((s, v) => s + v, 0))}
-                    </td>
-                  )}
+                  {selectedMonth === "all" && (() => {
+                    const total = dreData.resultado.reduce((s, v) => s + v, 0);
+                    return (
+                      <td className={`px-3 py-3 text-sm text-right font-bold border-l ${total < 0 ? "text-destructive" : "text-success"}`}>
+                        {formatCurrency(total)}
+                      </td>
+                    );
+                  })()}
+                </tr>
+
+                {/* Margem Líquida % */}
+                <tr className="bg-primary/5">
+                  <td className="px-4 py-2.5 text-xs font-semibold text-muted-foreground sticky left-0 bg-primary/5 z-10 border-r">
+                    Margem Líquida (%)
+                  </td>
+                  {visibleMonths.map(({ idx }) => {
+                    const m = dreData.margem[idx] || 0;
+                    return (
+                      <td
+                        key={idx}
+                        className={`px-3 py-2.5 text-xs text-right font-semibold ${
+                          m < 0 ? "text-destructive" : "text-muted-foreground"
+                        }`}
+                      >
+                        {m.toFixed(1)}%
+                      </td>
+                    );
+                  })}
+                  {selectedMonth === "all" && (() => {
+                    const totalEntradas = dreData.totalEntradas.reduce((s, v) => s + v, 0);
+                    const totalResultado = dreData.resultado.reduce((s, v) => s + v, 0);
+                    const m = totalEntradas > 0 ? (totalResultado / totalEntradas) * 100 : 0;
+                    return (
+                      <td className={`px-3 py-2.5 text-xs text-right font-semibold border-l ${m < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                        {m.toFixed(1)}%
+                      </td>
+                    );
+                  })()}
                 </tr>
               </tbody>
             </table>

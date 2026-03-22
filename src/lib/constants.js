@@ -54,6 +54,23 @@ export const MONTHS_PT = [
   "Jul", "Ago", "Set", "Out", "Nov", "Dez"
 ];
 
+// Normaliza transações importadas da planilha (amount negativo = saida, positivo = entrada)
+// e transações nativas do sistema (type = "entrada" | "saida", amount sempre positivo)
+export function normalizeTransaction(t) {
+  if (!t) return t;
+  const amount = parseFloat(t.amount) || 0;
+  // Se já tem type correto (entrada/saida), usa o amount absoluto
+  if (t.type === "entrada" || t.type === "saida") {
+    return { ...t, amount: Math.abs(amount) };
+  }
+  // Dados importados: amount negativo = saida, positivo = entrada
+  return {
+    ...t,
+    type: amount >= 0 ? "entrada" : "saida",
+    amount: Math.abs(amount),
+  };
+}
+
 export function formatCurrency(value) {
   if (value == null || isNaN(value)) return "R$ 0,00";
   return new Intl.NumberFormat("pt-BR", {

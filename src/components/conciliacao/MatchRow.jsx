@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Check, Link2, Plus, X, ChevronDown, ArrowRight, CheckCircle2, Tag } from "lucide-react";
+import { Check, Link2, Plus, X, ChevronDown, ArrowRight, CheckCircle2, Tag, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

@@ -12,6 +12,7 @@ import {
   DollarSign,
   LogOut,
   Repeat2,
+  GitCompare,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/lancamentos", icon: ArrowUpDown, label: "Lançamentos" },
   { path: "/recorrentes", icon: Repeat2, label: "Recorrentes" },
+  { path: "/conciliacao", icon: GitCompare, label: "Conciliação" },
   { path: "/dre", icon: FileBarChart, label: "DRE" },
   { path: "/fluxo-caixa", icon: TrendingUp, label: "Fluxo de Caixa" },
   { path: "/relatorios", icon: FileText, label: "Relatórios" },

@@ -77,11 +77,13 @@ export default function Importar() {
     setUploading(false);
 
     if (result.status === "success" && result.output?.transactions) {
-      const txns = result.output.transactions.map((t, i) => ({
-        ...t,
-        _id: i,
-        amount: Math.abs(t.amount || 0),
-      }));
+      const txns = result.output.transactions
+        .map((t, i) => ({
+          ...t,
+          _id: i,
+          amount: Math.abs(t.amount || 0),
+        }))
+        .sort((a, b) => b.amount - a.amount);
       setExtractedData(txns);
       setSelected(txns.map((_, i) => i));
       setStep("preview");

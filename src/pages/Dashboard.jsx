@@ -67,6 +67,8 @@ export default function Dashboard() {
     const entradas = sum(thisMonthTxns, "entrada");
     const saidas = sum(thisMonthTxns, "saida");
     const resultado = entradas - saidas;
+    const margem = entradas > 0 ? (resultado / entradas) * 100 : 0;
+    const geracaoCaixa = entradas - saidas; // saldo líquido do período
 
     const entradasLast = sum(lastMonthTxns, "entrada");
     const saidasLast = sum(lastMonthTxns, "saida");
@@ -74,7 +76,7 @@ export default function Dashboard() {
     const trendEntradas = entradasLast > 0 ? (((entradas - entradasLast) / entradasLast) * 100).toFixed(1) : 0;
     const trendSaidas = saidasLast > 0 ? (((saidas - saidasLast) / saidasLast) * 100).toFixed(1) : 0;
 
-    return { entradas, saidas, resultado, trendEntradas, trendSaidas, txCount: thisMonthTxns.length };
+    return { entradas, saidas, resultado, margem, geracaoCaixa, trendEntradas, trendSaidas, txCount: thisMonthTxns.length };
   }, [transactions, selectedYear, selectedMonth, viewMode]);
 
   const monthlyData = useMemo(() => {

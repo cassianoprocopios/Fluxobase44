@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { normalizeTransaction } from "@/lib/constants";
 import TransactionForm from "@/components/transactions/TransactionForm";
 import TransactionTable from "@/components/transactions/TransactionTable";
 import TransactionFilters from "@/components/transactions/TransactionFilters";

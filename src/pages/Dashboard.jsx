@@ -8,7 +8,7 @@ import {
   TrendingDown,
   Target,
 } from "lucide-react";
-import { formatCurrency, MONTHS_PT } from "@/lib/constants";
+import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants";
 import KPICard from "@/components/dashboard/KPICard";
 import MonthlyChart from "@/components/dashboard/MonthlyChart";
 import CashFlowMini from "@/components/dashboard/CashFlowMini";

@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Download, FileText, PieChart as PieChartIcon } from "lucide-react";
-import { formatCurrency, MONTHS_PT } from "@/lib/constants";
+import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants";
 import {
   PieChart,
   Pie,

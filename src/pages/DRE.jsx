@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency, MONTHS_PT } from "@/lib/constants";
+import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants";
 
 export default function DRE() {
   const currentYear = new Date().getFullYear();

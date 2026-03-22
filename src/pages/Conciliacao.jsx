@@ -36,6 +36,7 @@ export default function Conciliacao() {
   const [matches, setMatches] = useState([]);
   const [filter, setFilter] = useState("all");
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
   const { data: transactions = [] } = useQuery({
     queryKey: ["transactions"],

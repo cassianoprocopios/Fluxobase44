@@ -44,7 +44,16 @@ export default function MatchRow({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const wasConfirmed = React.useRef(confirmed || ignored);
   const [expanded, setExpanded] = useState(false);
+
+  // Quando o item é resetado (confirmed/ignored vira false), abre o painel
+  React.useEffect(() => {
+    if (wasConfirmed.current && !confirmed && !ignored) {
+      setExpanded(true);
+    }
+    wasConfirmed.current = confirmed || ignored;
+  }, [confirmed, ignored]);
   const [action, setAction] = useState(status === "matched" ? "link" : null);
   const [selectedId, setSelectedId] = useState(systemTx?.id || "");
   const [search, setSearch] = useState("");

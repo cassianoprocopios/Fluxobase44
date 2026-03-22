@@ -181,21 +181,36 @@ export default function RegrasCategorizacao() {
 
       {/* Rules list */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Tag className="w-4 h-4" />
-            Regras cadastradas
-            <Badge variant="secondary" className="ml-auto">{rules.length}</Badge>
-          </CardTitle>
+        <CardHeader className="pb-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Tag className="w-4 h-4" />
+              Regras cadastradas
+            </CardTitle>
+            <Badge variant="secondary" className="ml-auto">{filteredRules.length} / {rules.length}</Badge>
+          </div>
+          {rules.length > 0 && (
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por palavra-chave ou categoria…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-8 text-sm"
+              />
+            </div>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
             <p className="text-sm text-muted-foreground px-6 py-8 text-center">Carregando…</p>
           ) : rules.length === 0 ? (
             <p className="text-sm text-muted-foreground px-6 py-8 text-center">Nenhuma regra cadastrada ainda.</p>
+          ) : filteredRules.length === 0 ? (
+            <p className="text-sm text-muted-foreground px-6 py-8 text-center">Nenhuma regra encontrada.</p>
           ) : (
             <div className="divide-y divide-border">
-              {rules.map((rule) => (
+              {filteredRules.map((rule) => (
                 <div key={rule.id} className={`flex items-center gap-3 px-4 py-3 ${!rule.is_active ? "opacity-50" : ""}`}>
                   {/* Toggle */}
                   {canEdit && (

@@ -54,10 +54,10 @@ export default function MatchRow({
     }
     wasConfirmed.current = confirmed || ignored;
   }, [confirmed, ignored]);
-  const [action, setAction] = useState(status === "matched" ? "link" : null);
+  const [action, setAction] = useState(status === "matched" ? "link" : suggestedCategory ? "create" : null);
   const [selectedId, setSelectedId] = useState(systemTx?.id || "");
   const [search, setSearch] = useState("");
-  const [newCategory, setNewCategory] = useState("");
+  const [newCategory, setNewCategory] = useState(suggestedCategory || "");
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
   const [newCatName, setNewCatName] = useState("");
   const [isSavingCat, setIsSavingCat] = useState(false);

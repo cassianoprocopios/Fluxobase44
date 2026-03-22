@@ -45,7 +45,7 @@ export default function Conciliacao() {
   const fileName = concState.fileName || "";
   const matches = concState.matches || [];
   const filter = concState.filter || "all";
-  const selectedIds = concState.selectedIds || new Set();
+  const selectedIds = concState.selectedIds instanceof Set ? concState.selectedIds : new Set(concState.selectedIds || []);
 
   const setStep = (val) => updateConcState({ step: val });
   const setFileName = (val) => updateConcState({ fileName: val });

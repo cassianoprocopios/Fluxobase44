@@ -72,6 +72,24 @@ export default function MatchRow({
 
   const filteredCategories = categories.filter((c) => c.type === bankTx.type);
 
+  const canManageCategories = userRole === "admin" || userRole === "gerente";
+
+  const handleSaveNewCategory = async () => {
+    if (!newCatName.trim()) return;
+    setIsSavingCat(true);
+    await base44.entities.Category.create({
+      name: newCatName.trim(),
+      type: bankTx.type,
+      dre_group: bankTx.type === "entrada" ? "Outras Receitas" : "Gastos Variáveis",
+    });
+    queryClient.invalidateQueries({ queryKey: ["categories"] });
+    toast({ title: "Categoria criada!", description: `"${newCatName.trim()}" adicionada com sucesso.` });
+    setNewCategory(newCatName.trim());
+    setNewCatName("");
+    setShowNewCategoryForm(false);
+    setIsSavingCat(false);
+  };
+
   const handleConfirm = () => {
     if (action === "link") {
       const tx = systemTransactions.find((t) => t.id === selectedId);

@@ -186,6 +186,13 @@ export default function MatchRow({
               <p className="text-sm font-medium truncate">{systemTx.description || systemTx.category}</p>
               <p className="text-xs text-muted-foreground">{systemTx.category} · {formatDate(systemTx.date)} · {formatCurrency(systemTx.amount)}</p>
             </div>
+          ) : suggestedCategory ? (
+            <div>
+              <p className="text-xs text-primary font-medium mb-0.5 flex items-center gap-1">
+                <Zap className="w-3 h-3" /> Regra aplicada:
+              </p>
+              <p className="text-sm font-medium">{suggestedCategory}</p>
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground italic">Nenhum lançamento correspondente</p>
           )}

@@ -322,17 +322,7 @@ export default function Conciliacao() {
       </div>
 
       {step === "upload" && (
-        <>
-          <div className="flex justify-end">
-            <Link to="/regras-categorizacao">
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <Settings2 className="w-4 h-4" />
-                Regras de categorização
-              </Button>
-            </Link>
-          </div>
-          <UploadStep onParsed={handleParsed} />
-        </>
+        <UploadStep onParsed={handleParsed} />
       )}
 
       {step === "review" && (

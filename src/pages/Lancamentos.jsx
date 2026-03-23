@@ -155,6 +155,10 @@ export default function Lancamentos() {
             Conciliação
           </Button>
         </Link>
+        <Button variant="outline" size="sm" onClick={() => setShowOFX(true)}>
+          <FileText className="w-4 h-4 mr-2" />
+          Importar OFX
+        </Button>
         <Link to="/importar">
           <Button variant="outline" size="sm">
             <Upload className="w-4 h-4 mr-2" />

@@ -198,6 +198,8 @@ export default function Lancamentos() {
         onDelete={(t) => setDeleteTx(t)}
       />
 
+      <OFXImportModal open={showOFX} onOpenChange={setShowOFX} />
+
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

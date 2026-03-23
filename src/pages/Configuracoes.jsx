@@ -35,6 +35,7 @@ export default function Configuracoes() {
   const [showCatForm, setShowCatForm] = useState(false);
   const [newCat, setNewCat] = useState({ name: "", type: "entrada", dre_group: "" });
   const [newUnit, setNewUnit] = useState("");
+  const [newBank, setNewBank] = useState("");
 
   const { data: costCenters = [] } = useQuery({
     queryKey: ["costCenters"],

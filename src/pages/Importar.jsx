@@ -242,6 +242,7 @@ export default function Importar() {
                       />
                     </TableHead>
                     <TableHead>Data</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Categoria</TableHead>
                     <TableHead>Descrição</TableHead>
                     <TableHead className="text-right">Valor</TableHead>

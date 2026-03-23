@@ -32,11 +32,20 @@ export function parseOFX(content) {
       const amount = parseFloat(trnamt.replace(",", "."));
       const date = parseOFXDate(dtposted);
 
+      // Detecta tipo pelo TRNTYPE do OFX primeiro, depois pelo sinal do valor
+      let type;
+      if (trntype) {
+        const tt = trntype.toUpperCase();
+        type = (tt === "CREDIT" || tt === "DEP" || tt === "INT" || tt === "DIV") ? "entrada" : "saida";
+      } else {
+        type = amount >= 0 ? "entrada" : "saida";
+      }
+
       transactions.push({
         id: fitid ? `${fitid}-${i}` : `ofx-${i}-${Date.now()}`,
         date,
         amount: Math.abs(amount),
-        type: amount >= 0 ? "entrada" : "saida",
+        type,
         description: memo,
         raw: block,
       });

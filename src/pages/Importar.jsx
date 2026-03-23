@@ -34,7 +34,7 @@ export default function Importar() {
   const [extractedData, setExtractedData] = useState([]);
   const [selected, setSelected] = useState([]);
   const [importing, setImporting] = useState(false);
-  const [importType, setImportType] = useState("entrada");
+  const [importType, setImportType] = useState("auto");
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],

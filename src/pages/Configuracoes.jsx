@@ -59,6 +59,28 @@ export default function Configuracoes() {
     },
   });
 
+  const { data: bankAccounts = [] } = useQuery({
+    queryKey: ["bankAccounts"],
+    queryFn: () => base44.entities.BankAccount.list("name"),
+  });
+
+  const createBank = useMutation({
+    mutationFn: (name) => base44.entities.BankAccount.create({ name, is_active: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bankAccounts"] });
+      setNewBank("");
+      toast.success("Banco/Conta criado!");
+    },
+  });
+
+  const deleteBank = useMutation({
+    mutationFn: (id) => base44.entities.BankAccount.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bankAccounts"] });
+      toast.success("Banco/Conta excluído!");
+    },
+  });
+
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: () => base44.entities.Category.list(),

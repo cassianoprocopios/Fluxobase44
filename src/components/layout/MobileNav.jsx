@@ -11,8 +11,6 @@ import {
   X,
   DollarSign,
   LogOut,
-  Repeat2,
-  GitCompare,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 

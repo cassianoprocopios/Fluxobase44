@@ -172,12 +172,13 @@ export default function Importar() {
                 <div className="flex items-center gap-3">
                   <Label className="text-sm">Tipo dos lançamentos:</Label>
                   <Select value={importType} onValueChange={setImportType}>
-                    <SelectTrigger className="w-36">
+                    <SelectTrigger className="w-44">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="entrada">Entradas</SelectItem>
-                      <SelectItem value="saida">Saídas</SelectItem>
+                      <SelectItem value="auto">🔍 Detectar automaticamente</SelectItem>
+                      <SelectItem value="entrada">Forçar Entradas</SelectItem>
+                      <SelectItem value="saida">Forçar Saídas</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

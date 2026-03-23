@@ -189,9 +189,12 @@ export default function MatchRow({
           ) : suggestedCategory ? (
             <div>
               <p className="text-xs text-primary font-medium mb-0.5 flex items-center gap-1">
-                <Zap className="w-3 h-3" /> Regra aplicada:
+                <Zap className="w-3 h-3" /> Regra de negócio aplicada:
               </p>
               <p className="text-sm font-medium">{suggestedCategory}</p>
+              {match.suggestedCostCenter && (
+                <p className="text-xs text-muted-foreground">CC: {match.suggestedCostCenter}</p>
+              )}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground italic">Nenhum lançamento correspondente</p>

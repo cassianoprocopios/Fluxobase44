@@ -80,17 +80,17 @@ export default function OFXImportModal({ open, onOpenChange }) {
 
   const handleImport = async () => {
     setSaving(true);
-    const toCreate = transactions.filter((_, i) => selected.includes(i));
-    for (const t of toCreate) {
-      await base44.entities.Transaction.create({
+    const toCreate = transactions
+      .filter((_, i) => selected.includes(i))
+      .map((t) => ({
         date: t.date,
         type: t.type,
         amount: t.amount,
         description: t.description || "",
         category: t.type === "entrada" ? "Outras Receitas" : "Outras Despesas",
         payment_method: "outro",
-      });
-    }
+      }));
+    await base44.entities.Transaction.bulkCreate(toCreate);
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
     setSavedCount(toCreate.length);
     setSaving(false);

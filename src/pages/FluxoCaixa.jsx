@@ -115,7 +115,20 @@ export default function FluxoCaixa() {
             Movimentação financeira mensal
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {/* Unit filter */}
+          <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Todas as unidades" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as unidades</SelectItem>
+              {costCenters.map((c) => (
+                <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
             <SelectTrigger className="w-36">
               <SelectValue placeholder="Todos os meses" />

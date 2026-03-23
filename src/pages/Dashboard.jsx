@@ -151,6 +151,19 @@ export default function Dashboard() {
 
         {/* Controls */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Unit filter */}
+          <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Todas as unidades" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as unidades</SelectItem>
+              {costCenters.map((c) => (
+                <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           {/* Month selector */}
           <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
             <SelectTrigger className="w-32">

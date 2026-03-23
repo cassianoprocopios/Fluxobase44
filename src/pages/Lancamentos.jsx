@@ -33,15 +33,27 @@ export default function Lancamentos() {
   const [deleteTx, setDeleteTx] = useState(null);
   const [showOFX, setShowOFX] = useState(false);
   const [lastCreatedId, setLastCreatedId] = useState(null);
+  const currentMonth = new Date().toISOString().substring(0, 7); // "YYYY-MM"
+
   const [filters, setFilters] = useState({
     search: "",
     type: "todos",
-    month: "",
+    month: currentMonth,
   });
 
+  // Busca apenas o mês selecionado no filtro para evitar carregar tudo
   const { data: rawTransactions = [], isLoading } = useQuery({
-    queryKey: ["transactions"],
-    queryFn: () => base44.entities.Transaction.list("-date", 5000),
+    queryKey: ["transactions", filters.month],
+    queryFn: () => {
+      if (filters.month) {
+        return base44.entities.Transaction.filter(
+          { date: { $gte: `${filters.month}-01`, $lte: `${filters.month}-31` } },
+          "-date",
+          500
+        );
+      }
+      return base44.entities.Transaction.list("-date", 500);
+    },
   });
   const transactions = rawTransactions.map(normalizeTransaction);
 

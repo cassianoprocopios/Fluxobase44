@@ -119,7 +119,7 @@ export default function Dashboard() {
       });
     }
     return data;
-  }, [transactions, currentYear]);
+  }, [transactions, selectedYear]);
 
   if (isLoading) {
     return (

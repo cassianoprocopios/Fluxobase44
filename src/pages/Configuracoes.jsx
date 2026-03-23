@@ -26,7 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Tag, Building2 } from "lucide-react";
+import { Plus, Trash2, Tag, Building2, Landmark } from "lucide-react";
 import { toast } from "sonner";
 import { DRE_ENTRY_GROUPS, DRE_EXIT_GROUPS } from "@/lib/constants";
 

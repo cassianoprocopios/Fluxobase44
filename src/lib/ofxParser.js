@@ -269,14 +269,16 @@ export function autoMatch(bankTransactions, systemTransactions, rules = []) {
       return { bankTx: btx, systemTx: bestMatch, score: bestScore, status: "matched" };
     }
 
-    // Sem match no sistema — tenta categorizar por regra de palavra-chave
-    const ruleCategory = applyCategorizationRules(btx, rules);
+    // Sem match no sistema — tenta categorizar por regra de negócio
+    const ruleMatch = applyCategorizationRules(btx, rules);
     return {
       bankTx: btx,
       systemTx: null,
       score: 0,
       status: "pending",
-      suggestedCategory: ruleCategory || null,
+      suggestedCategory: ruleMatch?.category || null,
+      suggestedCostCenter: ruleMatch?.cost_center || null,
+      suggestedBankAccount: ruleMatch?.bank_account || null,
     };
   });
 }

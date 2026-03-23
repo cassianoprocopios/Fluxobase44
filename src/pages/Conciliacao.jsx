@@ -150,6 +150,8 @@ export default function Conciliacao() {
         amount: btx.amount,
         status: "pago",
         payment_method: "outro",
+        ...(m.newCostCenter ? { cost_center: m.newCostCenter } : {}),
+        ...(m.newBankAccount ? { bank_account: m.newBankAccount } : {}),
       });
       created++;
     }

@@ -108,7 +108,7 @@ export default function MatchRow({
       const tx = systemTransactions.find((t) => t.id === selectedId);
       if (tx) onConfirmMatch(bankTx.id, tx);
     } else if (action === "create") {
-      onCreateNew(bankTx, newCategory || filteredCategories[0]?.name || CATEGORIES_FALLBACK[bankTx.type]);
+      onCreateNew(bankTx, newCategory || filteredCategories[0]?.name || CATEGORIES_FALLBACK[bankTx.type], newCostCenter, newBankAccount);
     } else if (action === "ignore") {
       onIgnore(bankTx.id);
     }

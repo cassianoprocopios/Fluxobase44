@@ -14,7 +14,8 @@ export function parseOFX(content) {
     const stmtSection = content.split(/<BANKTRANLIST>/i)[1]?.split(/<\/BANKTRANLIST>/i)[0] || content;
     const trnBlocks = stmtSection.split(/<STMTTRN>/i).slice(1);
 
-    for (const block of trnBlocks) {
+    for (let i = 0; i < trnBlocks.length; i++) {
+      const block = trnBlocks[i];
       const get = (tag) => {
         const m = block.match(new RegExp(`<${tag}>([^<\\n\\r]+)`, "i"));
         return m ? m[1].trim() : "";
@@ -32,7 +33,7 @@ export function parseOFX(content) {
       const date = parseOFXDate(dtposted);
 
       transactions.push({
-        id: fitid || `ofx-${Date.now()}-${Math.random()}`,
+        id: fitid ? `${fitid}-${i}` : `ofx-${i}-${Date.now()}`,
         date,
         amount: Math.abs(amount),
         type: amount >= 0 ? "entrada" : "saida",

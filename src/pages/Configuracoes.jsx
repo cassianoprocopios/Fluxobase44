@@ -26,7 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Tag, Users } from "lucide-react";
+import { Plus, Trash2, Tag, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { DRE_ENTRY_GROUPS, DRE_EXIT_GROUPS } from "@/lib/constants";
 
@@ -34,6 +34,29 @@ export default function Configuracoes() {
   const queryClient = useQueryClient();
   const [showCatForm, setShowCatForm] = useState(false);
   const [newCat, setNewCat] = useState({ name: "", type: "entrada", dre_group: "" });
+  const [newUnit, setNewUnit] = useState("");
+
+  const { data: costCenters = [] } = useQuery({
+    queryKey: ["costCenters"],
+    queryFn: () => base44.entities.CostCenter.list("name"),
+  });
+
+  const createUnit = useMutation({
+    mutationFn: (name) => base44.entities.CostCenter.create({ name, is_active: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["costCenters"] });
+      setNewUnit("");
+      toast.success("Unidade criada!");
+    },
+  });
+
+  const deleteUnit = useMutation({
+    mutationFn: (id) => base44.entities.CostCenter.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["costCenters"] });
+      toast.success("Unidade excluída!");
+    },
+  });
 
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ["categories"],

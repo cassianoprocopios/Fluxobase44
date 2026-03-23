@@ -34,6 +34,18 @@ export default function OFXImportModal({ open, onOpenChange }) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedCount, setSavedCount] = useState(0);
+  const [importUnit, setImportUnit] = useState("");
+  const [importBank, setImportBank] = useState("");
+
+  const { data: costCenters = [] } = useQuery({
+    queryKey: ["costCenters"],
+    queryFn: () => base44.entities.CostCenter.list("name"),
+  });
+
+  const { data: bankAccounts = [] } = useQuery({
+    queryKey: ["bankAccounts"],
+    queryFn: () => base44.entities.BankAccount.list("name"),
+  });
 
   const reset = () => {
     setStep("upload");
@@ -44,6 +56,8 @@ export default function OFXImportModal({ open, onOpenChange }) {
     setLoading(false);
     setSaving(false);
     setSavedCount(0);
+    setImportUnit("");
+    setImportBank("");
   };
 
   const handleClose = () => {

@@ -107,6 +107,28 @@ export default function Lancamentos() {
     });
   }, [transactions, filters]);
 
+  const handleExportCSV = () => {
+    const headers = ["Data", "Tipo", "Categoria", "Descrição", "Valor", "Pagamento", "Unidade", "Banco"];
+    const rows = filtered.map((t) => [
+      t.date,
+      t.type,
+      t.category || "",
+      t.description || "",
+      t.amount,
+      t.payment_method || "",
+      t.cost_center || "",
+      t.bank_account || "",
+    ]);
+    const csv = [headers, ...rows].map((r) => r.join(";")).join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `lancamentos_${filters.month || new Date().toISOString().substring(0, 7)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleSubmit = (data) => {
     if (editingTx) {
       updateMutation.mutate({ id: editingTx.id, data });

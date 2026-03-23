@@ -59,6 +59,14 @@ export default function TransactionForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!form.cost_center) {
+      alert("Por favor, selecione a Unidade.");
+      return;
+    }
+    if (!form.bank_account) {
+      alert("Por favor, selecione o Banco / Conta.");
+      return;
+    }
     onSubmit({
       ...form,
       amount: parseFloat(form.amount) || 0,
@@ -167,10 +175,10 @@ export default function TransactionForm({
 
         {/* Cost Center */}
         <div className="space-y-2">
-          <Label>Centro de Custo</Label>
-          <Select value={form.cost_center} onValueChange={(v) => handleChange("cost_center", v)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione" />
+          <Label>Unidade *</Label>
+          <Select value={form.cost_center} onValueChange={(v) => handleChange("cost_center", v)} required>
+            <SelectTrigger className={!form.cost_center ? "border-destructive/50" : ""}>
+              <SelectValue placeholder="Selecione a unidade" />
             </SelectTrigger>
             <SelectContent>
               {costCenters.map((c) => (
@@ -182,10 +190,10 @@ export default function TransactionForm({
 
         {/* Bank Account */}
         <div className="space-y-2">
-          <Label>Banco / Conta</Label>
-          <Select value={form.bank_account} onValueChange={(v) => handleChange("bank_account", v)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione" />
+          <Label>Banco / Conta *</Label>
+          <Select value={form.bank_account} onValueChange={(v) => handleChange("bank_account", v)} required>
+            <SelectTrigger className={!form.bank_account ? "border-destructive/50" : ""}>
+              <SelectValue placeholder="Selecione o banco" />
             </SelectTrigger>
             <SelectContent>
               {bankAccounts.map((b) => (

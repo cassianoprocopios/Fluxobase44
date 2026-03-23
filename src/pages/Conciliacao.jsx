@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, CheckCheck, Download, Square, CheckSquare, MinusSquare, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, CheckCheck, Download, FileDown, Square, CheckSquare, MinusSquare, Trash2, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 

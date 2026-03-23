@@ -1,5 +1,5 @@
-import React, { useRef, useState } from "react";
-import { parseOFX } from "@/lib/ofxParser";
+import React, { useRef, useState, useMemo } from "react";
+import { parseOFX, parseCSV, applyCategorizationRules } from "@/lib/ofxParser";
 import { base44 } from "@/api/base44Client";
 import {
   Dialog,
@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, CheckCircle2, AlertCircle, FileText } from "lucide-react";
+import { Upload, CheckCircle2, AlertCircle, FileText, Sparkles, ChevronDown } from "lucide-react";
 import { formatCurrency } from "@/lib/constants";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -26,8 +26,8 @@ import { toast } from "sonner";
 export default function OFXImportModal({ open, onOpenChange }) {
   const inputRef = useRef();
   const queryClient = useQueryClient();
-  const [step, setStep] = useState("upload"); // upload | preview | done
-  const [transactions, setTransactions] = useState([]);
+  const [step, setStep] = useState("upload");
+  const [transactions, setTransactions] = useState([]); // enriched with suggestedCategory, editedCategory
   const [selected, setSelected] = useState([]);
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
@@ -45,6 +45,16 @@ export default function OFXImportModal({ open, onOpenChange }) {
   const { data: bankAccounts = [] } = useQuery({
     queryKey: ["bankAccounts"],
     queryFn: () => base44.entities.BankAccount.list("name"),
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => base44.entities.Category.list(),
+  });
+
+  const { data: rules = [] } = useQuery({
+    queryKey: ["categorizationRules"],
+    queryFn: () => base44.entities.CategorizationRule.list(),
   });
 
   const reset = () => {
@@ -65,25 +75,42 @@ export default function OFXImportModal({ open, onOpenChange }) {
     onOpenChange(false);
   };
 
+  const enrichWithCategories = (rawTxns, activeRules) => {
+    return rawTxns.map((t) => {
+      const ruleMatch = applyCategorizationRules(t, activeRules);
+      const suggested = ruleMatch?.category || (t.type === "entrada" ? "Outras Receitas" : "Outras Despesas");
+      return {
+        ...t,
+        suggestedCategory: suggested,
+        editedCategory: suggested,
+        autoMatched: !!ruleMatch?.category,
+      };
+    });
+  };
+
   const processFile = (file) => {
     if (!file) return;
     const ext = file.name.split(".").pop().toLowerCase();
-    if (!["ofx", "txt"].includes(ext)) {
-      setError("Use arquivos .ofx ou .txt");
+    if (!["ofx", "csv", "txt"].includes(ext)) {
+      setError("Use arquivos .ofx, .csv ou .txt");
       return;
     }
     setLoading(true);
     setError("");
     const reader = new FileReader();
     reader.onload = (e) => {
-      const txns = parseOFX(e.target.result);
-      if (txns.length === 0) {
+      let rawTxns = [];
+      if (ext === "csv") rawTxns = parseCSV(e.target.result);
+      else rawTxns = parseOFX(e.target.result);
+
+      if (rawTxns.length === 0) {
         setError("Nenhuma transação encontrada no arquivo.");
         setLoading(false);
         return;
       }
-      setTransactions(txns);
-      setSelected(txns.map((_, i) => i));
+      const enriched = enrichWithCategories(rawTxns, rules);
+      setTransactions(enriched);
+      setSelected(enriched.map((_, i) => i));
       setFileName(file.name);
       setLoading(false);
       setStep("preview");
@@ -100,6 +127,10 @@ export default function OFXImportModal({ open, onOpenChange }) {
     setSelected((prev) => prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]);
   };
 
+  const updateCategory = (i, cat) => {
+    setTransactions((prev) => prev.map((t, idx) => idx === i ? { ...t, editedCategory: cat } : t));
+  };
+
   const handleImport = async () => {
     if (!importUnit) { toast.error("Selecione a Unidade antes de importar."); return; }
     if (!importBank) { toast.error("Selecione o Banco/Conta antes de importar."); return; }
@@ -111,7 +142,7 @@ export default function OFXImportModal({ open, onOpenChange }) {
         type: t.type,
         amount: t.amount,
         description: t.description || "",
-        category: t.type === "entrada" ? "Outras Receitas" : "Outras Despesas",
+        category: t.editedCategory || (t.type === "entrada" ? "Outras Receitas" : "Outras Despesas"),
         payment_method: "outro",
         cost_center: importUnit,
         bank_account: importBank,
@@ -124,20 +155,26 @@ export default function OFXImportModal({ open, onOpenChange }) {
     toast.success(`${toCreate.length} lançamentos importados!`);
   };
 
+  const autoMatchedCount = useMemo(() => transactions.filter((t) => t.autoMatched).length, [transactions]);
+
+  const categoryOptions = useMemo(() => {
+    const cats = categories.map((c) => c.name);
+    return [...new Set(cats)].sort();
+  }, [categories]);
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[88vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Importar OFX</DialogTitle>
+          <DialogTitle>Importar OFX / CSV</DialogTitle>
           <DialogDescription>
-            Importe transações de um arquivo de extrato bancário .OFX diretamente como lançamentos.
+            Importe transações do extrato bancário. As categorias são sugeridas automaticamente pelas suas regras.
           </DialogDescription>
         </DialogHeader>
 
         {/* UPLOAD STEP */}
         {step === "upload" && (
           <div className="flex-1 flex flex-col gap-4 py-2">
-            {/* Unidade e Banco obrigatórios */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-sm">Unidade *</Label>
@@ -175,15 +212,15 @@ export default function OFXImportModal({ open, onOpenChange }) {
                     <FileText className="w-7 h-7 text-primary" />
                   </div>
                   <div className="text-center">
-                    <p className="font-semibold">Clique para selecionar o arquivo OFX</p>
-                    <p className="text-sm text-muted-foreground mt-1">Formatos aceitos: .ofx, .txt</p>
+                    <p className="font-semibold">Clique para selecionar o arquivo</p>
+                    <p className="text-sm text-muted-foreground mt-1">Formatos aceitos: .ofx, .csv, .txt</p>
                   </div>
                 </>
               )}
             </div>
-            <input ref={inputRef} type="file" accept=".ofx,.txt" className="hidden" onChange={(e) => processFile(e.target.files[0])} />
+            <input ref={inputRef} type="file" accept=".ofx,.csv,.txt" className="hidden" onChange={(e) => processFile(e.target.files[0])} />
             {error && (
-              <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2 w-full">
+              <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">
                 <AlertCircle className="w-4 h-4 shrink-0" /> {error}
               </div>
             )}
@@ -193,33 +230,80 @@ export default function OFXImportModal({ open, onOpenChange }) {
         {/* PREVIEW STEP */}
         {step === "preview" && (
           <div className="flex-1 flex flex-col overflow-hidden gap-3">
-            <div className="flex items-center justify-between text-sm">
+            {/* Header summary */}
+            <div className="flex items-center justify-between text-sm flex-wrap gap-2">
               <span className="text-muted-foreground">{fileName} · {transactions.length} transações</span>
-              <button onClick={toggleAll} className="text-primary hover:underline text-xs font-medium">
-                {selected.length === transactions.length ? "Desmarcar todos" : "Selecionar todos"}
-              </button>
+              <div className="flex items-center gap-3">
+                {autoMatchedCount > 0 && (
+                  <span className="flex items-center gap-1.5 text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">
+                    <Sparkles className="w-3 h-3" />
+                    {autoMatchedCount} categorizadas automaticamente
+                  </span>
+                )}
+                <button onClick={toggleAll} className="text-primary hover:underline text-xs font-medium">
+                  {selected.length === transactions.length ? "Desmarcar todos" : "Selecionar todos"}
+                </button>
+              </div>
             </div>
+
+            {/* List */}
             <div className="overflow-y-auto flex-1 border border-border rounded-xl divide-y divide-border">
               {transactions.map((t, i) => (
                 <div
                   key={t.id}
-                  onClick={() => toggleOne(i)}
-                  className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-muted/40 transition-colors ${selected.includes(i) ? "" : "opacity-50"}`}
+                  className={`flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted/30 ${selected.includes(i) ? "" : "opacity-50"}`}
                 >
-                  <input type="checkbox" readOnly checked={selected.includes(i)} className="w-4 h-4 shrink-0 accent-primary" />
+                  {/* Checkbox */}
+                  <input
+                    type="checkbox"
+                    readOnly
+                    checked={selected.includes(i)}
+                    onClick={() => toggleOne(i)}
+                    className="w-4 h-4 shrink-0 accent-primary cursor-pointer"
+                  />
+
+                  {/* Date */}
                   <span className="text-xs text-muted-foreground w-20 shrink-0">{t.date}</span>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${t.type === "entrada" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
+
+                  {/* Type badge */}
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
+                    t.type === "entrada" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                  }`}>
                     {t.type === "entrada" ? "Entrada" : "Saída"}
                   </span>
-                  <span className="text-sm flex-1 truncate">{t.description || "Sem descrição"}</span>
-                  <span className={`text-sm font-semibold shrink-0 ${t.type === "entrada" ? "text-success" : "text-destructive"}`}>
+
+                  {/* Description */}
+                  <span className="text-sm flex-1 truncate min-w-0">{t.description || "Sem descrição"}</span>
+
+                  {/* Category selector */}
+                  <div className="shrink-0 w-44" onClick={(e) => e.stopPropagation()}>
+                    <Select value={t.editedCategory} onValueChange={(v) => updateCategory(i, v)}>
+                      <SelectTrigger className={`h-7 text-xs ${t.autoMatched ? "border-primary/50 bg-primary/5" : ""}`}>
+                        <div className="flex items-center gap-1 overflow-hidden">
+                          {t.autoMatched && <Sparkles className="w-3 h-3 text-primary shrink-0" />}
+                          <SelectValue />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categoryOptions.map((cat) => (
+                          <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Amount */}
+                  <span className={`text-sm font-semibold shrink-0 w-28 text-right ${
+                    t.type === "entrada" ? "text-success" : "text-destructive"
+                  }`}>
                     {t.type === "entrada" ? "+" : "-"}{formatCurrency(t.amount)}
                   </span>
                 </div>
               ))}
             </div>
+
             <p className="text-xs text-muted-foreground">
-              {selected.length} de {transactions.length} selecionados · As categorias poderão ser editadas depois em Lançamentos.
+              {selected.length} de {transactions.length} selecionados · Edite as categorias antes de importar.
             </p>
           </div>
         )}
@@ -232,7 +316,7 @@ export default function OFXImportModal({ open, onOpenChange }) {
             </div>
             <div className="text-center">
               <p className="font-semibold text-success">{savedCount} lançamentos importados!</p>
-              <p className="text-sm text-muted-foreground mt-1">Os lançamentos já aparecem na lista abaixo.</p>
+              <p className="text-sm text-muted-foreground mt-1">Os lançamentos já aparecem na lista de Lançamentos.</p>
             </div>
           </div>
         )}

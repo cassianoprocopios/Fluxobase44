@@ -44,7 +44,8 @@ export function parseOFX(content) {
     return transactions;
   }
 
-  for (const block of blocks) {
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i];
     const get = (tag) => {
       const m = block.match(new RegExp(`<${tag}[^>]*>([^<]+)`, "i"));
       return m ? m[1].trim() : "";
@@ -61,7 +62,7 @@ export function parseOFX(content) {
     const date = parseOFXDate(dtposted);
 
     transactions.push({
-      id: fitid || `ofx-${Date.now()}-${Math.random()}`,
+      id: fitid ? `${fitid}-${i}` : `ofx-${i}-${Date.now()}`,
       date,
       amount: Math.abs(amount),
       type: amount >= 0 ? "entrada" : "saida",

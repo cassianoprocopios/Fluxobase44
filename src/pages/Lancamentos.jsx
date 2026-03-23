@@ -79,10 +79,12 @@ export default function Lancamentos() {
 
   const userRole = me?.role || "colaborador";
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["transactions", filters.month] });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Transaction.create(data),
     onSuccess: (created) => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      invalidate();
       setShowForm(false);
       setLastCreatedId(created?.id || null);
       toast.success("Lançamento criado!");
@@ -92,7 +94,7 @@ export default function Lancamentos() {
   const undoMutation = useMutation({
     mutationFn: (id) => base44.entities.Transaction.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      invalidate();
       setLastCreatedId(null);
       toast.success("Último lançamento desfeito!");
     },
@@ -101,7 +103,7 @@ export default function Lancamentos() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Transaction.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      invalidate();
       setShowForm(false);
       setEditingTx(null);
       toast.success("Lançamento atualizado!");
@@ -111,7 +113,7 @@ export default function Lancamentos() {
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Transaction.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      invalidate();
       setDeleteTx(null);
       toast.success("Lançamento excluído!");
     },

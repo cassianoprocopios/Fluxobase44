@@ -174,24 +174,50 @@ function parseFlexDate(raw) {
 }
 
 /**
- * Aplica regras de categorização por palavra-chave a uma transação bancária.
- * Retorna a categoria correspondente ou null.
+ * Aplica regras de categorização (keyword e/ou valor) a uma transação bancária.
+ * Retorna { category, cost_center, bank_account } ou null.
+ * Regras são ordenadas por prioridade (maior primeiro).
  */
 export function applyCategorizationRules(bankTx, rules = []) {
-  for (const rule of rules) {
+  const sorted = [...rules].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+  for (const rule of sorted) {
     if (!rule.is_active) continue;
     if (rule.transaction_type !== "ambos" && rule.transaction_type !== bankTx.type) continue;
 
-    const desc = (bankTx.description || "").toLowerCase();
-    const kw = rule.keyword.toLowerCase();
+    let keywordMatch = true; // sem keyword = não filtra por keyword
+    if (rule.keyword && rule.keyword.trim()) {
+      const desc = (bankTx.description || "").toLowerCase();
+      const kw = rule.keyword.toLowerCase().trim();
+      keywordMatch = false;
+      if (rule.match_type === "contains") keywordMatch = desc.includes(kw);
+      else if (rule.match_type === "starts_with") keywordMatch = desc.startsWith(kw);
+      else if (rule.match_type === "ends_with") keywordMatch = desc.endsWith(kw);
+      else if (rule.match_type === "exact") keywordMatch = desc === kw;
+    }
 
-    let matches = false;
-    if (rule.match_type === "contains") matches = desc.includes(kw);
-    else if (rule.match_type === "starts_with") matches = desc.startsWith(kw);
-    else if (rule.match_type === "ends_with") matches = desc.endsWith(kw);
-    else if (rule.match_type === "exact") matches = desc === kw;
+    let valueMatch = true; // sem critério de valor = não filtra por valor
+    const hasValueCriteria = rule.amount_exact != null || rule.amount_min != null || rule.amount_max != null;
+    if (hasValueCriteria) {
+      const amt = bankTx.amount;
+      if (rule.amount_exact != null) {
+        valueMatch = Math.abs(amt - rule.amount_exact) < 0.01;
+      } else {
+        if (rule.amount_min != null && amt < rule.amount_min) valueMatch = false;
+        if (rule.amount_max != null && amt > rule.amount_max) valueMatch = false;
+      }
+    }
 
-    if (matches) return rule.category;
+    // Regra sem nenhum critério definido (keyword vazia e sem valor) = ignora
+    if (!rule.keyword?.trim() && !hasValueCriteria) continue;
+
+    if (keywordMatch && valueMatch) {
+      return {
+        category: rule.category,
+        cost_center: rule.cost_center || null,
+        bank_account: rule.bank_account || null,
+      };
+    }
   }
   return null;
 }

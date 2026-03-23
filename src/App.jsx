@@ -18,6 +18,7 @@ import Importar from '@/pages/Importar';
 import Recorrentes from '@/pages/Recorrentes';
 import Conciliacao from '@/pages/Conciliacao';
 import RegrasCategorizacao from '@/pages/RegrasCategorizacao';
+import DashboardUnidades from '@/pages/DashboardUnidades';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -52,6 +53,7 @@ const AuthenticatedApp = () => {
         <Route path="/recorrentes" element={<Recorrentes />} />
         <Route path="/conciliacao" element={<Conciliacao />} />
         <Route path="/regras-categorizacao" element={<RegrasCategorizacao />} />
+        <Route path="/dashboard-unidades" element={<DashboardUnidades />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

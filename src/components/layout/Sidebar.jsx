@@ -11,11 +11,13 @@ import {
   ChevronRight,
   LogOut,
   DollarSign,
+  Building2,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/lancamentos", icon: ArrowUpDown, label: "Lançamentos" },
+  { path: "/dashboard-unidades", icon: Building2, label: "Unidades" },
   { path: "/dre", icon: FileBarChart, label: "DRE" },
   { path: "/fluxo-caixa", icon: TrendingUp, label: "Fluxo de Caixa" },
   { path: "/relatorios", icon: FileText, label: "Relatórios" },

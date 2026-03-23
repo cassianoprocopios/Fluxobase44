@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -12,10 +12,14 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants";
 
+// Grupos de custos variáveis / diretos para cálculo da margem de contribuição
+const CUSTOS_VARIAVEIS_GROUPS = ["Custos Diretos", "Gastos Variáveis", "Impostos"];
+
 export default function DRE() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
   const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedUnit, setSelectedUnit] = useState("all");
 
   const { data: rawTransactions = [], isLoading } = useQuery({
     queryKey: ["transactions"],
@@ -28,11 +32,18 @@ export default function DRE() {
     queryFn: () => base44.entities.Category.list(),
   });
 
+  const { data: costCenters = [] } = useQuery({
+    queryKey: ["costCenters"],
+    queryFn: () => base44.entities.CostCenter.list("name"),
+  });
+
   const dreData = useMemo(() => {
     const year = parseInt(selectedYear);
     const yearTxns = transactions.filter((t) => {
       if (!t.date || t.status === "cancelado") return false;
-      return new Date(t.date).getFullYear() === year;
+      if (new Date(t.date).getFullYear() !== year) return false;
+      if (selectedUnit !== "all" && t.cost_center !== selectedUnit) return false;
+      return true;
     });
 
     // Build DRE groups from categories
@@ -66,7 +77,6 @@ export default function DRE() {
       isGroup: true,
     }));
 
-    // Also add ungrouped entry categories
     const groupedEntryCats = Object.values(entryGroups).flat();
     const ungroupedEntries = getMonthlyTotals(
       (t) => t.type === "entrada" && !groupedEntryCats.includes(t.category)
@@ -78,13 +88,14 @@ export default function DRE() {
     const totalEntradas = Array(12).fill(0);
     entryRows.forEach((r) => r.monthly.forEach((v, i) => (totalEntradas[i] += v)));
 
-    // Exit groups
-    const exitRows = Object.entries(exitGroups)
+    // Exit groups - separar fixos de variáveis
+    const allExitRows = Object.entries(exitGroups)
       .filter(([g]) => g !== "Não DRE")
       .map(([group, cats]) => ({
         label: group,
         monthly: getMonthlyTotals((t) => t.type === "saida" && cats.includes(t.category)),
         isGroup: true,
+        isVariable: CUSTOS_VARIAVEIS_GROUPS.includes(group),
       }));
 
     const groupedExitCats = Object.values(exitGroups).flat();
@@ -92,26 +103,56 @@ export default function DRE() {
       (t) => t.type === "saida" && !groupedExitCats.includes(t.category)
     );
     if (ungroupedExits.some((v) => v > 0)) {
-      exitRows.push({ label: "Outras Despesas", monthly: ungroupedExits, isGroup: true });
+      allExitRows.push({ label: "Outras Despesas", monthly: ungroupedExits, isGroup: true, isVariable: true });
     }
 
-    const totalSaidas = Array(12).fill(0);
-    exitRows.forEach((r) => r.monthly.forEach((v, i) => (totalSaidas[i] += v)));
+    // Variáveis (para margem de contribuição)
+    const variableRows = allExitRows.filter((r) => r.isVariable);
+    const totalVariaveis = Array(12).fill(0);
+    variableRows.forEach((r) => r.monthly.forEach((v, i) => (totalVariaveis[i] += v)));
 
-    const resultado = totalEntradas.map((v, i) => v - totalSaidas[i]);
-
-    const margem = totalEntradas.map((entrada, i) =>
-      entrada > 0 ? (resultado[i] / entrada) * 100 : 0
+    // Margem de contribuição = Receita - Custos Variáveis
+    const margemContribuicao = totalEntradas.map((v, i) => v - totalVariaveis[i]);
+    const margemContribuicaoPct = totalEntradas.map((v, i) =>
+      v > 0 ? (margemContribuicao[i] / v) * 100 : 0
     );
 
-    return { entryRows, exitRows, totalEntradas, totalSaidas, resultado, margem };
-  }, [transactions, categories, selectedYear]);
+    // Fixos
+    const fixedRows = allExitRows.filter((r) => !r.isVariable);
+    const totalFixos = Array(12).fill(0);
+    fixedRows.forEach((r) => r.monthly.forEach((v, i) => (totalFixos[i] += v)));
+
+    const totalSaidas = Array(12).fill(0);
+    allExitRows.forEach((r) => r.monthly.forEach((v, i) => (totalSaidas[i] += v)));
+
+    // Resultado líquido = receita - todas as despesas
+    const resultado = totalEntradas.map((v, i) => v - totalSaidas[i]);
+    const margemLiquida = totalEntradas.map((v, i) =>
+      v > 0 ? (resultado[i] / v) * 100 : 0
+    );
+
+    return {
+      entryRows,
+      variableRows,
+      fixedRows,
+      totalEntradas,
+      totalVariaveis,
+      margemContribuicao,
+      margemContribuicaoPct,
+      totalFixos,
+      totalSaidas,
+      resultado,
+      margemLiquida,
+    };
+  }, [transactions, categories, selectedYear, selectedUnit]);
 
   const years = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
 
   const visibleMonths = selectedMonth === "all"
     ? MONTHS_PT.map((m, i) => ({ label: m, idx: i }))
     : [{ label: MONTHS_PT[parseInt(selectedMonth)], idx: parseInt(selectedMonth) }];
+
+  const colSpanTotal = visibleMonths.length + (selectedMonth === "all" ? 2 : 1);
 
   if (isLoading) {
     return (
@@ -122,13 +163,21 @@ export default function DRE() {
     );
   }
 
-  const DRERow = ({ label, monthly, bold, highlight, negative }) => {
+  const SectionHeader = ({ label, colorClass }) => (
+    <tr>
+      <td colSpan={colSpanTotal} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${colorClass}`}>
+        {label}
+      </td>
+    </tr>
+  );
+
+  const DRERow = ({ label, monthly, bold, highlight, negative, indent }) => {
     const visibleValues = visibleMonths.map(({ idx }) => monthly[idx] || 0);
     const total = visibleValues.reduce((s, v) => s + v, 0);
     return (
-      <tr className={`${highlight ? "bg-muted/50" : ""} ${bold ? "font-semibold" : ""}`}>
-        <td className="px-4 py-2.5 text-sm whitespace-nowrap sticky left-0 bg-card z-10 border-r">
-          {label}
+      <tr className={`${highlight ? "bg-muted/50" : "hover:bg-muted/20"} ${bold ? "font-semibold" : ""} transition-colors`}>
+        <td className={`px-4 py-2.5 text-sm whitespace-nowrap sticky left-0 bg-card z-10 border-r ${highlight ? "bg-muted/50" : ""} ${indent ? "pl-8 text-muted-foreground" : ""}`}>
+          {indent ? `↳ ${label}` : label}
         </td>
         {visibleValues.map((v, i) => (
           <td
@@ -153,16 +202,83 @@ export default function DRE() {
     );
   };
 
+  const ResultRow = ({ label, monthly, pctMonthly, bold = true, colorFn, showPct = false }) => (
+    <>
+      <tr className="bg-primary/5 border-t-2 border-primary/20">
+        <td className={`px-4 py-3 text-sm sticky left-0 bg-primary/5 z-10 border-r ${bold ? "font-bold" : "font-semibold"}`}>
+          {label}
+        </td>
+        {visibleMonths.map(({ idx }) => {
+          const v = monthly[idx] || 0;
+          return (
+            <td key={idx} className={`px-3 py-3 text-sm text-right font-bold ${colorFn(v)}`}>
+              {formatCurrency(v)}
+            </td>
+          );
+        })}
+        {selectedMonth === "all" && (() => {
+          const total = monthly.reduce((s, v) => s + v, 0);
+          return (
+            <td className={`px-3 py-3 text-sm text-right font-bold border-l ${colorFn(total)}`}>
+              {formatCurrency(total)}
+            </td>
+          );
+        })()}
+      </tr>
+      {showPct && (
+        <tr className="bg-primary/5">
+          <td className="px-4 py-2 text-xs font-semibold text-muted-foreground sticky left-0 bg-primary/5 z-10 border-r pl-8">
+            ↳ Margem (%)
+          </td>
+          {visibleMonths.map(({ idx }) => {
+            const m = pctMonthly[idx] || 0;
+            return (
+              <td key={idx} className={`px-3 py-2 text-xs text-right font-semibold ${m < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                {m.toFixed(1)}%
+              </td>
+            );
+          })}
+          {selectedMonth === "all" && (() => {
+            const totalEntradas = dreData.totalEntradas.reduce((s, v) => s + v, 0);
+            const totalRes = monthly.reduce((s, v) => s + v, 0);
+            const m = totalEntradas > 0 ? (totalRes / totalEntradas) * 100 : 0;
+            return (
+              <td className={`px-3 py-2 text-xs text-right font-semibold border-l ${m < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                {m.toFixed(1)}%
+              </td>
+            );
+          })()}
+        </tr>
+      )}
+    </>
+  );
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">DRE Gerencial</h1>
           <p className="text-sm text-muted-foreground">
             Demonstração de Resultado do Exercício
+            {selectedUnit !== "all" ? ` — ${selectedUnit}` : " — Todas as Unidades"}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {/* Filtro Unidade */}
+          <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="Todas as unidades" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as unidades</SelectItem>
+              {costCenters.map((c) => (
+                <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Filtro Mês */}
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
             <SelectTrigger className="w-36">
               <SelectValue placeholder="Todos os meses" />
@@ -174,8 +290,10 @@ export default function DRE() {
               ))}
             </SelectContent>
           </Select>
+
+          {/* Filtro Ano */}
           <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-28">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -187,121 +305,69 @@ export default function DRE() {
         </div>
       </div>
 
+      {/* Tabela DRE */}
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted/80 border-b">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground sticky left-0 bg-muted/80 z-10 border-r">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground sticky left-0 bg-muted/80 z-10 border-r min-w-[200px]">
                     Descrição
                   </th>
                   {visibleMonths.map(({ label }) => (
-                    <th
-                      key={label}
-                      className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                    >
+                    <th key={label} className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-[100px]">
                       {label}
                     </th>
                   ))}
                   {selectedMonth === "all" && (
-                    <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l">
+                    <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l min-w-[110px]">
                       Total
                     </th>
                   )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {/* Section: Entries */}
-                <tr className="bg-success/5">
-                  <td colSpan={14} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-success">
-                    Entradas
-                  </td>
-                </tr>
+
+                {/* ── RECEITAS ── */}
+                <SectionHeader label="Receitas" colorClass="bg-success/8 text-success" />
                 {dreData.entryRows.map((row) => (
-                  <DRERow key={row.label} {...row} />
+                  <DRERow key={row.label} {...row} indent />
                 ))}
-                <DRERow
-                  label="TOTAL ENTRADAS"
-                  monthly={dreData.totalEntradas}
-                  bold
-                  highlight
+                <DRERow label="TOTAL RECEITAS" monthly={dreData.totalEntradas} bold highlight />
+
+                {/* ── CUSTOS VARIÁVEIS ── */}
+                <SectionHeader label="Custos Variáveis e Diretos" colorClass="bg-orange-50 text-orange-600" />
+                {dreData.variableRows.map((row) => (
+                  <DRERow key={row.label} {...row} negative indent />
+                ))}
+                <DRERow label="TOTAL CUSTOS VARIÁVEIS" monthly={dreData.totalVariaveis} bold highlight negative />
+
+                {/* ── MARGEM DE CONTRIBUIÇÃO ── */}
+                <ResultRow
+                  label="MARGEM DE CONTRIBUIÇÃO"
+                  monthly={dreData.margemContribuicao}
+                  pctMonthly={dreData.margemContribuicaoPct}
+                  colorFn={(v) => (v < 0 ? "text-destructive" : "text-primary")}
+                  showPct
                 />
 
-                {/* Section: Exits */}
-                <tr className="bg-destructive/5">
-                  <td colSpan={14} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-destructive">
-                    Saídas
-                  </td>
-                </tr>
-                {dreData.exitRows.map((row) => (
-                  <DRERow key={row.label} {...row} negative />
+                {/* ── GASTOS FIXOS ── */}
+                <SectionHeader label="Gastos Fixos" colorClass="bg-destructive/5 text-destructive" />
+                {dreData.fixedRows.map((row) => (
+                  <DRERow key={row.label} {...row} negative indent />
                 ))}
-                <DRERow
-                  label="TOTAL SAÍDAS"
-                  monthly={dreData.totalSaidas}
-                  bold
-                  highlight
-                  negative
+                <DRERow label="TOTAL GASTOS FIXOS" monthly={dreData.totalFixos} bold highlight negative />
+
+                {/* ── LUCRO LÍQUIDO ── */}
+                <ResultRow
+                  label="LUCRO LÍQUIDO"
+                  monthly={dreData.resultado}
+                  pctMonthly={dreData.margemLiquida}
+                  colorFn={(v) => (v < 0 ? "text-destructive" : "text-success")}
+                  showPct
                 />
 
-                {/* Result */}
-                <tr className="bg-primary/5 border-t-2 border-primary/20">
-                  <td className="px-4 py-3 text-sm font-bold sticky left-0 bg-primary/5 z-10 border-r">
-                    RESULTADO LÍQUIDO
-                  </td>
-                  {visibleMonths.map(({ idx }) => {
-                    const v = dreData.resultado[idx] || 0;
-                    return (
-                      <td
-                        key={idx}
-                        className={`px-3 py-3 text-sm text-right font-bold ${
-                          v < 0 ? "text-destructive" : "text-success"
-                        }`}
-                      >
-                        {formatCurrency(v)}
-                      </td>
-                    );
-                  })}
-                  {selectedMonth === "all" && (() => {
-                    const total = dreData.resultado.reduce((s, v) => s + v, 0);
-                    return (
-                      <td className={`px-3 py-3 text-sm text-right font-bold border-l ${total < 0 ? "text-destructive" : "text-success"}`}>
-                        {formatCurrency(total)}
-                      </td>
-                    );
-                  })()}
-                </tr>
-
-                {/* Margem Líquida % */}
-                <tr className="bg-primary/5">
-                  <td className="px-4 py-2.5 text-xs font-semibold text-muted-foreground sticky left-0 bg-primary/5 z-10 border-r">
-                    Margem Líquida (%)
-                  </td>
-                  {visibleMonths.map(({ idx }) => {
-                    const m = dreData.margem[idx] || 0;
-                    return (
-                      <td
-                        key={idx}
-                        className={`px-3 py-2.5 text-xs text-right font-semibold ${
-                          m < 0 ? "text-destructive" : "text-muted-foreground"
-                        }`}
-                      >
-                        {m.toFixed(1)}%
-                      </td>
-                    );
-                  })}
-                  {selectedMonth === "all" && (() => {
-                    const totalEntradas = dreData.totalEntradas.reduce((s, v) => s + v, 0);
-                    const totalResultado = dreData.resultado.reduce((s, v) => s + v, 0);
-                    const m = totalEntradas > 0 ? (totalResultado / totalEntradas) * 100 : 0;
-                    return (
-                      <td className={`px-3 py-2.5 text-xs text-right font-semibold border-l ${m < 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                        {m.toFixed(1)}%
-                      </td>
-                    );
-                  })()}
-                </tr>
               </tbody>
             </table>
           </div>

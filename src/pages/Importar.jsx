@@ -79,11 +79,20 @@ export default function Importar() {
 
     if (result.status === "success" && result.output?.transactions) {
       const txns = result.output.transactions
-        .map((t, i) => ({
-          ...t,
-          _id: i,
-          amount: Math.abs(t.amount || 0),
-        }))
+        .map((t, i) => {
+          const rawAmount = t.amount || 0;
+          // Detecta tipo: campo explícito > sinal do valor > fallback para importType
+          let detectedType = t.type;
+          if (!detectedType || !["entrada", "saida"].includes(detectedType)) {
+            detectedType = rawAmount < 0 ? "saida" : (importType === "auto" ? "entrada" : importType);
+          }
+          return {
+            ...t,
+            _id: i,
+            type: detectedType,
+            amount: Math.abs(rawAmount),
+          };
+        })
         .sort((a, b) => b.amount - a.amount);
       setExtractedData(txns);
       setSelected(txns.map((_, i) => i));

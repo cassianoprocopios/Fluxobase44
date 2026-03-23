@@ -131,6 +131,29 @@ export default function Conciliacao() {
   };
 
   // Save all confirmed to DB
+  const handleExportCSV = () => {
+    const headers = ["Data", "Tipo", "Descrição (Extrato)", "Valor", "Status", "Categoria", "Unidade", "Banco", "Lançamento Vinculado"];
+    const rows = matches.map((m) => [
+      m.bankTx.date,
+      m.bankTx.type,
+      m.bankTx.description || "",
+      m.bankTx.amount,
+      m.confirmed ? "Conciliado" : m.ignored ? "Ignorado" : "Pendente",
+      m.newCategory || m.linkedTx?.category || m.suggestedCategory || "",
+      m.newCostCenter || m.linkedTx?.cost_center || "",
+      m.newBankAccount || m.linkedTx?.bank_account || "",
+      m.linkedTx ? (m.linkedTx.description || m.linkedTx.category) : (m.createNew ? "Novo lançamento" : ""),
+    ]);
+    const csv = [headers, ...rows].map((r) => r.join(";")).join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `conciliacao_${fileName.replace(/\.[^.]+$/, "")}_${new Date().toISOString().substring(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleSaveAll = async () => {
     setIsSaving(true);
     const toCreate = matches.filter((m) => m.confirmed && m.createNew);

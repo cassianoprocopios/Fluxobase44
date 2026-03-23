@@ -99,7 +99,7 @@ export default function Dashboard() {
       const monthTxns = transactions.filter((t) => {
         if (!t.date) return false;
         const d = new Date(t.date);
-        return d.getFullYear() === currentYear && d.getMonth() === m;
+        return d.getFullYear() === selectedYear && d.getMonth() === m;
       });
 
       const entradas = monthTxns

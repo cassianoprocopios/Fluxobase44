@@ -147,18 +147,22 @@ export default function Lancamentos() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link to="/conciliacao">
-            <Button variant="outline" size="sm">
-              <ArrowLeftRight className="w-4 h-4 mr-2" />
-              Conciliação
-            </Button>
-          </Link>
-          <Link to="/importar">
-            <Button variant="outline" size="sm">
-              <Upload className="w-4 h-4 mr-2" />
-              Importar
-            </Button>
-          </Link>
+        <Link to="/conciliacao">
+          <Button variant="outline" size="sm">
+            <ArrowLeftRight className="w-4 h-4 mr-2" />
+            Conciliação
+          </Button>
+        </Link>
+        <Link to="/importar">
+          <Button variant="outline" size="sm">
+            <Upload className="w-4 h-4 mr-2" />
+            Importar
+          </Button>
+        </Link>
+        <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={filtered.length === 0}>
+          <Download className="w-4 h-4 mr-2" />
+          Exportar CSV
+        </Button>
           <Button
             size="sm"
             onClick={() => {

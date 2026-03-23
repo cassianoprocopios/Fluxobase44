@@ -87,7 +87,7 @@ export default function Relatorios() {
     .reduce((s, t) => s + (t.amount || 0), 0);
 
   const handleExportCSV = () => {
-    const headers = ["Data", "Tipo", "Categoria", "Descrição", "Valor", "Status", "Pagamento"];
+    const headers = ["Data", "Tipo", "Categoria", "Descrição", "Valor", "Status", "Pagamento", "Unidade", "Banco"];
     const rows = filtered.map((t) => [
       t.date,
       t.type,
@@ -96,6 +96,8 @@ export default function Relatorios() {
       t.amount,
       t.status,
       t.payment_method,
+      t.cost_center || "",
+      t.bank_account || "",
     ]);
     const csv = [headers, ...rows].map((r) => r.join(";")).join("\n");
     const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });

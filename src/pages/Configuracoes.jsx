@@ -104,6 +104,52 @@ export default function Configuracoes() {
         </p>
       </div>
 
+      {/* Units */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-primary" />
+            Unidades / Lojas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2 mb-4">
+            <input
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              placeholder="Nome da nova unidade..."
+              value={newUnit}
+              onChange={(e) => setNewUnit(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && newUnit.trim() && createUnit.mutate(newUnit.trim())}
+            />
+            <Button
+              size="sm"
+              disabled={!newUnit.trim() || createUnit.isPending}
+              onClick={() => createUnit.mutate(newUnit.trim())}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {costCenters.map((u) => (
+              <div key={u.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-muted/40 text-sm font-medium">
+                {u.name}
+                {canManage && (
+                  <button
+                    onClick={() => deleteUnit.mutate(u.id)}
+                    className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+            {costCenters.length === 0 && (
+              <p className="text-sm text-muted-foreground">Nenhuma unidade cadastrada.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Categories */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Entry Categories */}

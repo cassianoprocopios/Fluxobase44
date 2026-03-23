@@ -180,9 +180,9 @@ export default function Importar() {
                 Formatos: CSV, XLS, XLSX
               </p>
 
-              <div className="flex flex-col items-center gap-4">
-                <div className="flex items-center gap-3">
-                  <Label className="text-sm">Tipo dos lançamentos:</Label>
+              <div className="flex flex-col items-center gap-4 w-full max-w-sm">
+                <div className="flex items-center gap-3 w-full">
+                  <Label className="text-sm shrink-0">Tipo:</Label>
                   <Select value={importType} onValueChange={setImportType}>
                     <SelectTrigger className="w-44">
                       <SelectValue />
@@ -191,6 +191,28 @@ export default function Importar() {
                       <SelectItem value="auto">🔍 Detectar automaticamente</SelectItem>
                       <SelectItem value="entrada">Forçar Entradas</SelectItem>
                       <SelectItem value="saida">Forçar Saídas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-3 w-full">
+                  <Label className="text-sm shrink-0">Unidade *</Label>
+                  <Select value={importUnit} onValueChange={setImportUnit}>
+                    <SelectTrigger className={`flex-1 ${!importUnit ? "border-destructive/50" : ""}`}>
+                      <SelectValue placeholder="Selecione a unidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {costCenters.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-3 w-full">
+                  <Label className="text-sm shrink-0">Banco *</Label>
+                  <Select value={importBank} onValueChange={setImportBank}>
+                    <SelectTrigger className={`flex-1 ${!importBank ? "border-destructive/50" : ""}`}>
+                      <SelectValue placeholder="Selecione o banco" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {bankAccounts.map((b) => <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>

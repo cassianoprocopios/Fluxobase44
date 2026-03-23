@@ -136,7 +136,33 @@ export default function OFXImportModal({ open, onOpenChange }) {
 
         {/* UPLOAD STEP */}
         {step === "upload" && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8">
+          <div className="flex-1 flex flex-col gap-4 py-2">
+            {/* Unidade e Banco obrigatórios */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-sm">Unidade *</Label>
+                <Select value={importUnit} onValueChange={setImportUnit}>
+                  <SelectTrigger className={!importUnit ? "border-destructive/50" : ""}>
+                    <SelectValue placeholder="Selecione a unidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {costCenters.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Banco / Conta *</Label>
+                <Select value={importBank} onValueChange={setImportBank}>
+                  <SelectTrigger className={!importBank ? "border-destructive/50" : ""}>
+                    <SelectValue placeholder="Selecione o banco" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bankAccounts.map((b) => <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div
               className="w-full border-2 border-dashed border-border rounded-xl p-10 flex flex-col items-center gap-4 cursor-pointer hover:border-primary/60 hover:bg-muted/20 transition-all"
               onClick={() => !loading && inputRef.current?.click()}

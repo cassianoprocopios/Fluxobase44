@@ -12,7 +12,7 @@ import {
   LogOut,
   DollarSign,
 } from "lucide-react";
-...
+
 const NAV_ITEMS = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/lancamentos", icon: ArrowUpDown, label: "Lançamentos" },

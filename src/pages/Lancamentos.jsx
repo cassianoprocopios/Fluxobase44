@@ -31,6 +31,7 @@ export default function Lancamentos() {
   const [showForm, setShowForm] = useState(false);
   const [editingTx, setEditingTx] = useState(null);
   const [deleteTx, setDeleteTx] = useState(null);
+  const [showOFX, setShowOFX] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
     type: "todos",

@@ -15,7 +15,6 @@ import MonthlyChart from "@/components/dashboard/MonthlyChart";
 import CashFlowMini from "@/components/dashboard/CashFlowMini";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { base44 as _b44 } from "@/api/base44Client"; // already imported above via base44
 
 export default function Dashboard() {
   const { data: rawTransactions = [], isLoading } = useQuery({

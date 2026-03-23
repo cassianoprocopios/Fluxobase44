@@ -159,7 +159,19 @@ export default function Lancamentos() {
             {filtered.length} lançamentos encontrados
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {lastCreatedId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => undoMutation.mutate(lastCreatedId)}
+              disabled={undoMutation.isPending}
+              className="text-destructive border-destructive/40 hover:bg-destructive/10"
+            >
+              <Undo2 className="w-4 h-4 mr-2" />
+              Desfazer último
+            </Button>
+          )}
         <Link to="/conciliacao">
           <Button variant="outline" size="sm">
             <ArrowLeftRight className="w-4 h-4 mr-2" />

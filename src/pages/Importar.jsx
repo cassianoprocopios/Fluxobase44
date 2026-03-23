@@ -108,7 +108,7 @@ export default function Importar() {
       .filter((_, i) => selected.includes(i))
       .map((t) => ({
         date: t.date,
-        type: importType,
+        type: importType === "auto" ? (t.type || "saida") : importType,
         category: t.category || "Outros",
         description: t.description,
         amount: t.amount,

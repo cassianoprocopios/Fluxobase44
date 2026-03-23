@@ -32,6 +32,7 @@ export default function Lancamentos() {
   const [editingTx, setEditingTx] = useState(null);
   const [deleteTx, setDeleteTx] = useState(null);
   const [showOFX, setShowOFX] = useState(false);
+  const [lastCreatedId, setLastCreatedId] = useState(null);
   const [filters, setFilters] = useState({
     search: "",
     type: "todos",
@@ -68,10 +69,20 @@ export default function Lancamentos() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Transaction.create(data),
-    onSuccess: () => {
+    onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       setShowForm(false);
+      setLastCreatedId(created?.id || null);
       toast.success("Lançamento criado!");
+    },
+  });
+
+  const undoMutation = useMutation({
+    mutationFn: (id) => base44.entities.Transaction.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      setLastCreatedId(null);
+      toast.success("Último lançamento desfeito!");
     },
   });
 

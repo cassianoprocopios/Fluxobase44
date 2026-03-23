@@ -43,7 +43,7 @@ export default function Conciliacao() {
   // Usar valores do Context, ou valores padrão se não estiverem salvos
   const step = concState.step || "upload";
   const fileName = concState.fileName || "";
-  const matches = concState.matches || [];
+  const matches = Array.isArray(concState.matches) ? concState.matches : [];
   const filter = concState.filter || "all";
   const selectedIds = concState.selectedIds instanceof Set ? concState.selectedIds : new Set(Array.isArray(concState.selectedIds) ? concState.selectedIds : []);
 

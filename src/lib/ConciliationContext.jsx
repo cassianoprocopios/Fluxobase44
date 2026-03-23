@@ -44,7 +44,11 @@ export function ConciliationProvider({ children }) {
   }, [state]);
 
   const updateState = (updates) => {
-    setState((prev) => ({ ...prev, ...updates }));
+    if (typeof updates === "function") {
+      setState((prev) => ({ ...prev, ...updates(prev) }));
+    } else {
+      setState((prev) => ({ ...prev, ...updates }));
+    }
   };
 
   const clearSession = () => {

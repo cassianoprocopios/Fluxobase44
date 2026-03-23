@@ -332,6 +332,16 @@ export default function Conciliacao() {
               {isSaving ? "Salvando…" : `Salvar ${confirmedCount} conciliados`}
             </Button>
             <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCSV}
+              disabled={matches.length === 0}
+              className="gap-1.5"
+            >
+              <FileDown className="w-4 h-4" />
+              Exportar CSV
+            </Button>
+            <Button
               variant="ghost"
               size="sm"
               onClick={() => { setStep("upload"); setMatches([]); updateConcState({ filter: "all", selectedIds: new Set() }); }}

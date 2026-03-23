@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Upload } from "lucide-react";
+import { Plus, Upload, ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 import { normalizeTransaction } from "@/lib/constants";
 import TransactionForm from "@/components/transactions/TransactionForm";

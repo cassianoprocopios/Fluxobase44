@@ -48,9 +48,21 @@ export default function Conciliacao() {
 
   const setStep = (val) => updateConcState({ step: val });
   const setFileName = (val) => updateConcState({ fileName: val });
-  const setMatches = (val) => updateConcState({ matches: val });
+  const setMatches = (val) => {
+    if (typeof val === "function") {
+      updateConcState((prev) => ({ matches: val(prev.matches) }));
+    } else {
+      updateConcState({ matches: val });
+    }
+  };
   const setFilter = (val) => { updateConcState({ filter: val, selectedIds: new Set() }); };
-  const setSelectedIds = (val) => updateConcState({ selectedIds: val });
+  const setSelectedIds = (val) => {
+    if (typeof val === "function") {
+      updateConcState((prev) => ({ selectedIds: val(prev.selectedIds instanceof Set ? prev.selectedIds : new Set(Array.isArray(prev.selectedIds) ? prev.selectedIds : [])) }));
+    } else {
+      updateConcState({ selectedIds: val });
+    }
+  };
 
   const { data: transactions = [] } = useQuery({
     queryKey: ["transactions"],

@@ -259,6 +259,15 @@ export default function Importar() {
                         />
                       </TableCell>
                       <TableCell className="text-sm">{t.date || "—"}</TableCell>
+                      <TableCell>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                          (importType === "auto" ? t.type : importType) === "entrada"
+                            ? "bg-success/10 text-success"
+                            : "bg-destructive/10 text-destructive"
+                        }`}>
+                          {(importType === "auto" ? t.type : importType) === "entrada" ? "Entrada" : "Saída"}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-sm">{t.category || "—"}</TableCell>
                       <TableCell className="text-sm max-w-[200px] truncate">
                         {t.description || "—"}

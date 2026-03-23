@@ -35,10 +35,22 @@ export default function Importar() {
   const [selected, setSelected] = useState([]);
   const [importing, setImporting] = useState(false);
   const [importType, setImportType] = useState("auto");
+  const [importUnit, setImportUnit] = useState("");
+  const [importBank, setImportBank] = useState("");
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: () => base44.entities.Category.list(),
+  });
+
+  const { data: costCenters = [] } = useQuery({
+    queryKey: ["costCenters"],
+    queryFn: () => base44.entities.CostCenter.list("name"),
+  });
+
+  const { data: bankAccounts = [] } = useQuery({
+    queryKey: ["bankAccounts"],
+    queryFn: () => base44.entities.BankAccount.list("name"),
   });
 
   const handleFileUpload = async (e) => {

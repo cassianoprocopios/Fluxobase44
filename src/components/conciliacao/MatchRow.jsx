@@ -39,6 +39,8 @@ export default function MatchRow({
 }) {
   const { bankTx, systemTx, status } = match;
   const suggestedCategory = match.suggestedCategory || null;
+  const suggestedCostCenter = match.suggestedCostCenter || null;
+  const suggestedBankAccount = match.suggestedBankAccount || null;
   const confirmed = match.confirmed;
   const ignored = match.ignored;
 

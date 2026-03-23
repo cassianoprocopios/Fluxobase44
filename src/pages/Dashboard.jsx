@@ -21,7 +21,12 @@ export default function Dashboard() {
     queryKey: ["transactions"],
     queryFn: () => base44.entities.Transaction.list("-date", 5000),
   });
-  const transactions = rawTransactions.map(normalizeTransaction);
+  const allTransactions = rawTransactions.map(normalizeTransaction);
+
+  const { data: costCenters = [] } = useQuery({
+    queryKey: ["costCenters"],
+    queryFn: () => base44.entities.CostCenter.list("name"),
+  });
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -30,6 +35,11 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState("month"); // "month" | "accumulated"
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedUnit, setSelectedUnit] = useState("all");
+
+  const transactions = selectedUnit === "all"
+    ? allTransactions
+    : allTransactions.filter((t) => t.cost_center === selectedUnit);
 
   const stats = useMemo(() => {
     const sum = (arr, type) =>

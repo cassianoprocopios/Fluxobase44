@@ -102,11 +102,11 @@ export default function Conciliacao() {
     );
   };
 
-  const handleCreateNew = (bankTx, category) => {
+  const handleCreateNew = (bankTx, category, costCenter, bankAccount) => {
     setMatches((prev) =>
       prev.map((m) =>
         m.bankTx.id === bankTx.id
-          ? { ...m, confirmed: true, createNew: true, linkedTx: null, newCategory: category }
+          ? { ...m, confirmed: true, createNew: true, linkedTx: null, newCategory: category, newCostCenter: costCenter || null, newBankAccount: bankAccount || null }
           : m
       )
     );

@@ -17,12 +17,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Upload, ArrowLeftRight, Download } from "lucide-react";
+import { Plus, Upload, ArrowLeftRight, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { normalizeTransaction } from "@/lib/constants";
 import TransactionForm from "@/components/transactions/TransactionForm";
 import TransactionTable from "@/components/transactions/TransactionTable";
 import TransactionFilters from "@/components/transactions/TransactionFilters";
+import OFXImportModal from "@/components/transactions/OFXImportModal";
 import { Link } from "react-router-dom";
 
 export default function Lancamentos() {

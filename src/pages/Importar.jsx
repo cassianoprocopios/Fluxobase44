@@ -115,6 +115,8 @@ export default function Importar() {
   };
 
   const handleImport = async () => {
+    if (!importUnit) { toast.error("Selecione a Unidade antes de importar."); return; }
+    if (!importBank) { toast.error("Selecione o Banco/Conta antes de importar."); return; }
     setImporting(true);
     const toImport = extractedData
       .filter((_, i) => selected.includes(i))
@@ -126,8 +128,8 @@ export default function Importar() {
         amount: t.amount,
         payment_method: t.payment_method || "outro",
         status: t.status || "pago",
-        cost_center: t.cost_center,
-        bank_account: t.bank_account,
+        cost_center: importUnit,
+        bank_account: importBank,
         client_supplier: t.client_supplier,
       }));
 

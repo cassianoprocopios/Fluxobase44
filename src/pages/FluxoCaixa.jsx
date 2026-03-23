@@ -112,7 +112,7 @@ export default function FluxoCaixa() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Fluxo de Caixa</h1>
           <p className="text-sm text-muted-foreground">
-            Movimentação financeira mensal
+            Movimentação financeira mensal{selectedUnit !== "all" ? ` — ${selectedUnit}` : " — Todas as unidades"}
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">

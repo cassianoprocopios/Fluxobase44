@@ -141,12 +141,14 @@ export default function Dashboard() {
     ? `Acumulado Jan–${MONTHS_PT[selectedMonth]} ${selectedYear}`
     : `${MONTHS_PT[selectedMonth]} ${selectedYear}`;
 
+  const unitLabel = selectedUnit === "all" ? "Todas as unidades" : selectedUnit;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Visão geral financeira — {periodLabel}</p>
+          <p className="text-sm text-muted-foreground">Visão geral financeira — {periodLabel} · {unitLabel}</p>
         </div>
 
         {/* Controls */}

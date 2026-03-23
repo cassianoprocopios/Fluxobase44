@@ -60,6 +60,8 @@ export default function MatchRow({
   const [selectedId, setSelectedId] = useState(systemTx?.id || "");
   const [search, setSearch] = useState("");
   const [newCategory, setNewCategory] = useState(suggestedCategory || "");
+  const [newCostCenter] = useState(suggestedCostCenter || "");
+  const [newBankAccount] = useState(suggestedBankAccount || "");
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
   const [newCatName, setNewCatName] = useState("");
   const [isSavingCat, setIsSavingCat] = useState(false);

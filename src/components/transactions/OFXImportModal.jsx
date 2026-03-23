@@ -101,6 +101,8 @@ export default function OFXImportModal({ open, onOpenChange }) {
   };
 
   const handleImport = async () => {
+    if (!importUnit) { toast.error("Selecione a Unidade antes de importar."); return; }
+    if (!importBank) { toast.error("Selecione o Banco/Conta antes de importar."); return; }
     setSaving(true);
     const toCreate = transactions
       .filter((_, i) => selected.includes(i))
@@ -111,6 +113,8 @@ export default function OFXImportModal({ open, onOpenChange }) {
         description: t.description || "",
         category: t.type === "entrada" ? "Outras Receitas" : "Outras Despesas",
         payment_method: "outro",
+        cost_center: importUnit,
+        bank_account: importBank,
       }));
     await base44.entities.Transaction.bulkCreate(toCreate);
     queryClient.invalidateQueries({ queryKey: ["transactions"] });

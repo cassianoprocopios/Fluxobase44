@@ -173,13 +173,11 @@ export default function Lancamentos() {
   };
 
   const handleBulkUpdate = async (ids, category) => {
-    // Processa em lotes de 5 com delay para evitar rate limit
-    const batchSize = 5;
-    for (let i = 0; i < ids.length; i += batchSize) {
-      const batch = ids.slice(i, i + batchSize);
-      await Promise.all(batch.map((id) => base44.entities.Transaction.update(id, { category })));
-      if (i + batchSize < ids.length) {
-        await new Promise((resolve) => setTimeout(resolve, 300)); // 300ms entre lotes
+    // Processa um por um com delay para evitar rate limit
+    for (let i = 0; i < ids.length; i++) {
+      await base44.entities.Transaction.update(ids[i], { category });
+      if (i < ids.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 500)); // 500ms entre requisições
       }
     }
     invalidate();

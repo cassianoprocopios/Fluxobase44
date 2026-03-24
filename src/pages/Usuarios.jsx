@@ -46,6 +46,11 @@ export default function Usuarios() {
   const [inviting, setInviting] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const [editRole, setEditRole] = useState("");
+  const [showCreateDirect, setShowCreateDirect] = useState(false);
+  const [createEmail, setCreateEmail] = useState("");
+  const [createName, setCreateName] = useState("");
+  const [createRole, setCreateRole] = useState("colaborador");
+  const [creating, setCreating] = useState(false);
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["users"],

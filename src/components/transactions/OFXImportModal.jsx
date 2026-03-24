@@ -218,11 +218,12 @@ export default function OFXImportModal({ open, onOpenChange }) {
     if (!importUnit) { toast.error("Selecione a Unidade antes de importar."); return; }
     if (!importBank) { toast.error("Selecione o Banco/Conta antes de importar."); return; }
 
-    const toCreate = transactions.filter((t) => t.reviewStatus === "approved");
-    const pending = transactions.filter((t) => t.reviewStatus !== "approved");
+    const active = transactions.filter((t) => !t.excluded);
+    const toCreate = active.filter((t) => t.reviewStatus === "approved");
+    const pending = active.filter((t) => t.reviewStatus !== "approved");
 
     if (toCreate.length === 0) {
-      toast.error("Nenhum lançamento aprovado para importar. Revise as categorias.");
+      toast.error("Nenhum lançamento aprovado para importar. Classifique pelo menos um grupo.");
       return;
     }
 

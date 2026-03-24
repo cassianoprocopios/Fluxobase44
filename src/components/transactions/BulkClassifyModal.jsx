@@ -166,7 +166,11 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
         <DialogHeader>
           <DialogTitle>Classificação em Massa</DialogTitle>
           <DialogDescription>
-            Lançamentos agrupados por descrição. Expanda um grupo para selecionar itens individualmente.
+            {unclassifiedTransactions.length === 0 ? (
+              <span className="text-success font-medium">✓ Todos os lançamentos foram classificados!</span>
+            ) : (
+              <>Lançamentos agrupados por descrição. Expanda um grupo para selecionar itens individualmente.</>
+            )}
           </DialogDescription>
         </DialogHeader>
 

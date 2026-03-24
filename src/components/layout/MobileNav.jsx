@@ -25,6 +25,7 @@ const NAV_ITEMS = [
   { path: "/dre", icon: FileBarChart, label: "DRE" },
   { path: "/fluxo-caixa", icon: TrendingUp, label: "Fluxo de Caixa" },
   { path: "/relatorios", icon: FileText, label: "Relatórios" },
+  { path: "/usuarios", icon: Users, label: "Usuários" },
   { path: "/configuracoes", icon: Settings, label: "Configurações" },
 ];
 

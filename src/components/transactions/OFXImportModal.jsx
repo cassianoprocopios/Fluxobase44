@@ -78,24 +78,15 @@ export default function OFXImportModal({ open, onOpenChange }) {
   };
 
   const enrichWithCategories = (rawTxns, activeRules) => {
-    return rawTxns.map((t) => {
+    return rawTxns.map((t, i) => {
       const ruleMatch = applyCategorizationRules(t, activeRules);
       const csvCategory = t.category;
+      const base = { ...t, _importId: i, excluded: false };
 
       if (ruleMatch?.category || csvCategory) {
-        return {
-          ...t,
-          category: ruleMatch?.category || csvCategory,
-          reviewStatus: "suggested",
-          autoSource: ruleMatch?.category ? "regra" : "csv",
-        };
+        return { ...base, category: ruleMatch?.category || csvCategory, reviewStatus: "suggested", autoSource: ruleMatch?.category ? "regra" : "csv" };
       } else {
-        return {
-          ...t,
-          category: "",
-          reviewStatus: "pending",
-          autoSource: null,
-        };
+        return { ...base, category: "", reviewStatus: "pending", autoSource: null };
       }
     });
   };

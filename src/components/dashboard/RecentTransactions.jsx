@@ -51,6 +51,7 @@ export default function RecentTransactions({ transactions = [] }) {
                         ? (() => { try { return format(new Date(t.date.substring(0,10)), "dd MMM", { locale: ptBR }); } catch { return t.date.substring(0,10); } })()
                         : "—"}{" "}
                       · {t.category}
+                      {t.bank_account && ` · ${t.bank_account}`}
                     </p>
                   </div>
                 </div>

@@ -203,15 +203,9 @@ export default function Lancamentos() {
           </Button>
         </Link>
         <Button variant="outline" size="sm" onClick={() => setShowOFX(true)}>
-          <FileText className="w-4 h-4 mr-2" />
-          Importar OFX
+          <Upload className="w-4 h-4 mr-2" />
+          Importar
         </Button>
-        <Link to="/importar">
-          <Button variant="outline" size="sm">
-            <Upload className="w-4 h-4 mr-2" />
-            Importar
-          </Button>
-        </Link>
         <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={filtered.length === 0}>
           <Download className="w-4 h-4 mr-2" />
           Exportar CSV

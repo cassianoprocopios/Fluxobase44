@@ -510,8 +510,7 @@ export default function OFXImportModal({ open, onOpenChange }) {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              {stats.approved} aprovado(s) serão importados.
-              {stats.pending > 0 && <span className="text-amber-600 font-medium"> · {stats.pending} sem categoria ficarão de fora.</span>}
+              {stats.approved} classificado(s) · {stats.pending} sem categoria (serão importados para classificação posterior).
               {stats.excluded > 0 && <span className="text-muted-foreground"> · {stats.excluded} excluídos manualmente.</span>}
             </p>
           </div>

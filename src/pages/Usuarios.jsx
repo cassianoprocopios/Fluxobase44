@@ -74,6 +74,18 @@ export default function Usuarios() {
     setInviting(true);
     try {
       await base44.users.inviteUser(inviteEmail, inviteRole);
+      
+      // Enviar email de convite
+      try {
+        await base44.functions.invoke('sendInviteEmail', { 
+          email: inviteEmail, 
+          role: inviteRole 
+        });
+      } catch (emailError) {
+        console.error('Erro ao enviar email:', emailError);
+        // Continua mesmo se o email falhar
+      }
+
       toast.success(`Convite enviado para ${inviteEmail}!`);
       setShowInvite(false);
       setInviteEmail("");

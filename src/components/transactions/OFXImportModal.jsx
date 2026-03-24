@@ -456,15 +456,47 @@ export default function OFXImportModal({ open, onOpenChange }) {
                         {g.items.map((t) => (
                           <div
                             key={t._importId}
-                            className={`flex items-center gap-2.5 pl-10 pr-4 py-2 transition-colors hover:bg-muted/30 cursor-pointer ${t.excluded ? "opacity-40" : ""}`}
-                            onClick={() => toggleItemIncluded(t._importId)}
+                            className={`flex items-center gap-2 pl-8 pr-3 py-2 transition-colors ${t.excluded ? "opacity-40" : "hover:bg-muted/30"}`}
                           >
-                            {t.excluded ? <Square className="w-3.5 h-3.5 text-muted-foreground shrink-0" /> : <CheckSquare className="w-3.5 h-3.5 text-primary shrink-0" />}
-                            <span className="text-xs text-muted-foreground w-16 shrink-0">
+                            {/* Checkbox incluir/excluir */}
+                            <button
+                              onClick={() => toggleItemIncluded(t._importId)}
+                              className="shrink-0"
+                              title={t.excluded ? "Incluir" : "Excluir"}
+                            >
+                              {t.excluded
+                                ? <Square className="w-3.5 h-3.5 text-muted-foreground" />
+                                : <CheckSquare className="w-3.5 h-3.5 text-primary" />}
+                            </button>
+
+                            {/* Data */}
+                            <span className="text-xs text-muted-foreground w-14 shrink-0">
                               {t.date ? format(new Date(t.date.substring(0, 10)), "dd/MM/yy", { locale: ptBR }) : "—"}
                             </span>
-                            <span className="text-xs text-muted-foreground flex-1 truncate">{t.category || "Sem categoria"}</span>
-                            <span className={`text-xs font-semibold shrink-0 ${t.type === "entrada" ? "text-success" : "text-destructive"}`}>
+
+                            {/* Categoria individual — independente do grupo */}
+                            <div className="flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+                              <Select
+                                value={t.category || ""}
+                                onValueChange={(v) => updateItemCategory(t._importId, v)}
+                                disabled={t.excluded}
+                              >
+                                <SelectTrigger className={`h-6 text-xs w-full ${
+                                  t.excluded ? "" :
+                                  t.reviewStatus === "approved" ? "border-success/50 bg-success/5" : "border-amber-400/60 bg-amber-50/40 dark:bg-amber-900/10"
+                                }`}>
+                                  <SelectValue placeholder="Categoria individual..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(categoryOptionsByType[t.type] || []).map((cat) => (
+                                    <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Valor */}
+                            <span className={`text-xs font-semibold shrink-0 w-20 text-right ${t.type === "entrada" ? "text-success" : "text-destructive"}`}>
                               {t.type === "entrada" ? "+" : "-"}{formatCurrency(t.amount)}
                             </span>
                           </div>

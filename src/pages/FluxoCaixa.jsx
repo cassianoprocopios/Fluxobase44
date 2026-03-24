@@ -69,6 +69,11 @@ export default function FluxoCaixa() {
     ? allTransactions
     : allTransactions.filter((t) => t.cost_center === selectedUnit);
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => base44.entities.Category.list(),
+  });
+
   const chartData = useMemo(() => {
     const year = parseInt(selectedYear);
     let saldoAcumulado = 0;
@@ -87,12 +92,30 @@ export default function FluxoCaixa() {
         .filter((t) => t.type === "saida")
         .reduce((s, t) => s + (t.amount || 0), 0);
       const saldo = entradas - saidas;
-      const geracaoCaixa = saldo; // saldo líquido do período = geração de caixa
+      const geracaoCaixa = saldo;
       saldoAcumulado += saldo;
 
-      return { month, entradas, saidas, saldo, geracaoCaixa, acumulado: saldoAcumulado };
+      // Categorias de entradas
+      const entradaCats = {};
+      monthTxns.filter((t) => t.type === "entrada").forEach((t) => {
+        const cat = t.category || "Sem categoria";
+        entradaCats[cat] = (entradaCats[cat] || 0) + (t.amount || 0);
+      });
+
+      // Categorias de saídas (agrupadas por dre_group ou categoria)
+      const saidaCats = {};
+      monthTxns.filter((t) => t.type === "saida").forEach((t) => {
+        const catObj = categories.find((c) => c.name === t.category && c.type === "saida");
+        const groupKey = catObj?.dre_group || t.category || "Sem categoria";
+        if (!saidaCats[groupKey]) saidaCats[groupKey] = { total: 0, cats: {} };
+        saidaCats[groupKey].total += t.amount || 0;
+        const catName = t.category || "Sem categoria";
+        saidaCats[groupKey].cats[catName] = (saidaCats[groupKey].cats[catName] || 0) + (t.amount || 0);
+      });
+
+      return { month, idx, entradas, saidas, saldo, geracaoCaixa, acumulado: saldoAcumulado, entradaCats, saidaCats };
     });
-  }, [transactions, selectedYear]);
+  }, [transactions, selectedYear, categories]);
 
   const years = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
 

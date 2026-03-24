@@ -192,7 +192,14 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
 
         {/* Group list */}
         <div className="flex-1 overflow-y-auto border border-border rounded-xl divide-y divide-border min-h-0">
-          {filtered.length === 0 ? (
+          {unclassifiedTransactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full gap-3 py-10">
+              <div className="w-12 h-12 rounded-full bg-success/15 flex items-center justify-center">
+                <CheckSquare className="w-6 h-6 text-success" />
+              </div>
+              <p className="text-sm text-muted-foreground font-medium">Todos os lançamentos foram classificados</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <p className="text-center text-muted-foreground py-10 text-sm">Nenhum grupo encontrado</p>
           ) : (
             filtered.map((g) => {

@@ -222,11 +222,12 @@ export default function OFXImportModal({ open, onOpenChange }) {
     if (!importBank) { toast.error("Selecione o Banco/Conta antes de importar."); return; }
 
     const active = transactions.filter((t) => !t.excluded);
-    const toCreate = active.filter((t) => t.reviewStatus === "approved");
+    const approved = active.filter((t) => t.reviewStatus === "approved");
     const pending = active.filter((t) => t.reviewStatus !== "approved");
+    const toCreate = active; // Importa TODOS (aprovados + pendentes)
 
     if (toCreate.length === 0) {
-      toast.error("Nenhum lançamento aprovado para importar. Classifique pelo menos um grupo.");
+      toast.error("Nenhum lançamento para importar.");
       return;
     }
 
@@ -237,14 +238,14 @@ export default function OFXImportModal({ open, onOpenChange }) {
         type: t.type,
         amount: t.amount,
         description: t.description || "",
-        category: t.category,
+        category: t.category || "", // Pode vir vazio para classificação posterior
         payment_method: "outro",
         cost_center: importUnit,
         bank_account: importBank,
       }))
     );
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
-    setSavedCount(toCreate.length);
+    setSavedCount(approved.length);
     setPendingCount(pending.length);
     setSaving(false);
     setStep("done");

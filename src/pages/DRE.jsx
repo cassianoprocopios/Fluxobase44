@@ -237,16 +237,23 @@ export default function DRE() {
 
     return {
       entryRows,
+      outrasReceitasRows,
       variableRows,
       fixedRows,
+      abaixoLinhaRows,
       totalEntradas,
+      totalOutrasReceitas,
       totalVariaveis,
       margemContribuicao,
       margemContribuicaoPct,
       totalFixos,
+      ebitda,
+      ebitdaPct,
+      totalAbaixoLinha,
       totalSaidas,
       resultado,
       margemLiquida,
+      saldoFinal,
     };
   }, [transactions, categories, selectedYear, selectedUnit]);
 

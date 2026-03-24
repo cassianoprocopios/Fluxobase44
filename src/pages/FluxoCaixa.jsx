@@ -364,17 +364,27 @@ export default function FluxoCaixa() {
                         <tr>
                           <td colSpan={6} className="p-0 bg-muted/10 border-b border-border">
                             <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border/50">
-                              {/* Entradas por categoria */}
+                              {/* Entradas por grupo */}
                               <div className="p-3 space-y-1">
                                 <p className="text-xs font-bold uppercase tracking-wider text-success/80 flex items-center gap-1.5 mb-2">
-                                  <ArrowUpRight className="w-3.5 h-3.5" /> Entradas por Categoria
+                                  <ArrowUpRight className="w-3.5 h-3.5" /> Entradas por Grupo
                                 </p>
                                 {Object.entries(row.entradaCats)
-                                  .sort((a, b) => b[1] - a[1])
-                                  .map(([cat, val]) => (
-                                    <div key={cat} className="flex items-center justify-between gap-3 py-1 px-2 rounded hover:bg-muted/30 transition-colors">
-                                      <span className="text-xs text-muted-foreground truncate">{cat}</span>
-                                      <span className="text-xs font-semibold text-success shrink-0">{formatCurrency(val)}</span>
+                                  .sort((a, b) => b[1].total - a[1].total)
+                                  .map(([group, data]) => (
+                                    <div key={group} className="space-y-0.5">
+                                      <div className="flex items-center justify-between gap-3 py-1 px-2 rounded bg-success/5">
+                                        <span className="text-xs font-semibold text-success/90 truncate">{group}</span>
+                                        <span className="text-xs font-bold text-success shrink-0">{formatCurrency(data.total)}</span>
+                                      </div>
+                                      {Object.entries(data.cats)
+                                        .sort((a, b) => b[1] - a[1])
+                                        .map(([cat, val]) => (
+                                          <div key={cat} className="flex items-center justify-between gap-3 py-0.5 pl-6 pr-2 rounded hover:bg-muted/30 transition-colors">
+                                            <span className="text-xs text-muted-foreground truncate">• {cat}</span>
+                                            <span className="text-xs font-medium text-success/80 shrink-0">{formatCurrency(val)}</span>
+                                          </div>
+                                        ))}
                                     </div>
                                   ))}
                                 {Object.keys(row.entradaCats).length === 0 && (

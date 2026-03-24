@@ -4,13 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, CheckSquare, Square, ArrowUpRight, ArrowDownRight, Sparkles } from "lucide-react";
+import { Search, CheckSquare, Square, ArrowUpRight, ArrowDownRight, Sparkles, ChevronDown, ChevronRight } from "lucide-react";
 import { formatCurrency } from "@/lib/constants";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
 export default function BulkClassifyModal({ open, onOpenChange, transactions, categories, onBulkUpdate }) {
   const [search, setSearch] = useState("");
-  const [selectedGroups, setSelectedGroups] = useState(new Set());
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
   const [newCategory, setNewCategory] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -34,7 +37,6 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
       g.categories.add(t.category || "");
       g.totalAmount += t.amount || 0;
     }
-    // Retorna ordenado por quantidade de itens
     return Array.from(map.values()).sort((a, b) => b.items.length - a.items.length);
   }, [transactions]);
 
@@ -44,54 +46,65 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
     return groups.filter((g) => g.label.toLowerCase().includes(q));
   }, [groups, search]);
 
-  const toggleGroup = (key) => {
-    setSelectedGroups((prev) => {
+  const allVisibleIds = useMemo(() => filtered.flatMap((g) => g.items.map((t) => t.id)), [filtered]);
+
+  const toggleItem = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleGroup = (g) => {
+    const ids = g.items.map((t) => t.id);
+    const allSelected = ids.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (allVisibleIds.every((id) => selectedIds.has(id))) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allVisibleIds));
+    }
+  };
+
+  const toggleExpand = (key) => {
+    setExpandedGroups((prev) => {
       const next = new Set(prev);
       next.has(key) ? next.delete(key) : next.add(key);
       return next;
     });
   };
 
-  const toggleAll = () => {
-    if (selectedGroups.size === filtered.length) {
-      setSelectedGroups(new Set());
-    } else {
-      setSelectedGroups(new Set(filtered.map((g) => g.key)));
-    }
-  };
-
-  const categoryOptions = useMemo(() => {
-    const cats = categories.map((c) => c.name);
-    return [...new Set(cats)].sort();
-  }, [categories]);
+  const categoryOptions = useMemo(() => [...new Set(categories.map((c) => c.name))].sort(), [categories]);
 
   const handleApply = async () => {
     if (!newCategory) { toast.error("Selecione uma categoria para aplicar."); return; }
-    if (selectedGroups.size === 0) { toast.error("Selecione ao menos um grupo."); return; }
-
+    if (selectedIds.size === 0) { toast.error("Selecione ao menos um lançamento."); return; }
     setSaving(true);
-    const idsToUpdate = groups
-      .filter((g) => selectedGroups.has(g.key))
-      .flatMap((g) => g.items.map((t) => t.id));
-
-    await onBulkUpdate(idsToUpdate, newCategory);
+    await onBulkUpdate([...selectedIds], newCategory);
     setSaving(false);
-    toast.success(`${idsToUpdate.length} lançamento(s) atualizados!`);
-    setSelectedGroups(new Set());
+    toast.success(`${selectedIds.size} lançamento(s) atualizados!`);
+    setSelectedIds(new Set());
     setNewCategory("");
   };
 
-  const selectedCount = groups
-    .filter((g) => selectedGroups.has(g.key))
-    .reduce((sum, g) => sum + g.items.length, 0);
+  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[88vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Classificação em Massa</DialogTitle>
           <DialogDescription>
-            Lançamentos agrupados por descrição. Selecione os grupos e aplique uma nova categoria.
+            Lançamentos agrupados por descrição. Expanda um grupo para selecionar itens individualmente.
           </DialogDescription>
         </DialogHeader>
 
@@ -107,11 +120,7 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
             />
           </div>
           <Button variant="outline" size="sm" onClick={toggleAll} className="shrink-0">
-            {selectedGroups.size === filtered.length && filtered.length > 0 ? (
-              <><CheckSquare className="w-4 h-4 mr-1.5" /> Desmarcar</>
-            ) : (
-              <><Square className="w-4 h-4 mr-1.5" /> Selecionar todos</>
-            )}
+            {allSelected ? <><CheckSquare className="w-4 h-4 mr-1.5" />Desmarcar</> : <><Square className="w-4 h-4 mr-1.5" />Todos</>}
           </Button>
         </div>
 
@@ -121,47 +130,80 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
             <p className="text-center text-muted-foreground py-10 text-sm">Nenhum grupo encontrado</p>
           ) : (
             filtered.map((g) => {
-              const isSelected = selectedGroups.has(g.key);
-              const multipleCategories = g.categories.size > 1;
+              const expanded = expandedGroups.has(g.key);
+              const groupIds = g.items.map((t) => t.id);
+              const allGroupSelected = groupIds.every((id) => selectedIds.has(id));
+              const someGroupSelected = groupIds.some((id) => selectedIds.has(id));
+              const multiCat = g.categories.size > 1;
               const singleCat = g.categories.size === 1 ? [...g.categories][0] : null;
+
               return (
-                <div
-                  key={g.key}
-                  onClick={() => toggleGroup(g.key)}
-                  className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-muted/40 ${isSelected ? "bg-primary/5" : ""}`}
-                >
-                  {isSelected ? (
-                    <CheckSquare className="w-4 h-4 text-primary shrink-0" />
-                  ) : (
-                    <Square className="w-4 h-4 text-muted-foreground shrink-0" />
-                  )}
+                <div key={g.key}>
+                  {/* Group header row */}
+                  <div className={`flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40 ${allGroupSelected ? "bg-primary/5" : someGroupSelected ? "bg-primary/3" : ""}`}>
+                    {/* Checkbox group */}
+                    <button onClick={() => toggleGroup(g)} className="shrink-0">
+                      {allGroupSelected
+                        ? <CheckSquare className="w-4 h-4 text-primary" />
+                        : someGroupSelected
+                        ? <div className="w-4 h-4 border-2 border-primary rounded-sm bg-primary/30" />
+                        : <Square className="w-4 h-4 text-muted-foreground" />}
+                    </button>
 
-                  <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${g.type === "entrada" ? "bg-success/10" : "bg-destructive/10"}`}>
-                    {g.type === "entrada"
-                      ? <ArrowUpRight className="w-3.5 h-3.5 text-success" />
-                      : <ArrowDownRight className="w-3.5 h-3.5 text-destructive" />}
-                  </div>
+                    {/* Type icon */}
+                    <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${g.type === "entrada" ? "bg-success/10" : "bg-destructive/10"}`}>
+                      {g.type === "entrada"
+                        ? <ArrowUpRight className="w-3.5 h-3.5 text-success" />
+                        : <ArrowDownRight className="w-3.5 h-3.5 text-destructive" />}
+                    </div>
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{g.label}</p>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      {multipleCategories ? (
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 text-amber-500" />
-                          {g.categories.size} categorias diferentes
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">{singleCat || "Sem categoria"}</span>
-                      )}
+                    {/* Label + category */}
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleExpand(g.key)}>
+                      <p className="text-sm font-medium truncate">{g.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                        {multiCat && <Sparkles className="w-3 h-3 text-amber-500" />}
+                        {multiCat ? `${g.categories.size} categorias diferentes` : (singleCat || "Sem categoria")}
+                      </p>
+                    </div>
+
+                    {/* Count + total + expand */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant="secondary" className="text-xs">{g.items.length}</Badge>
+                      <span className={`text-sm font-semibold ${g.type === "entrada" ? "text-success" : "text-destructive"}`}>
+                        {formatCurrency(g.totalAmount)}
+                      </span>
+                      <button onClick={() => toggleExpand(g.key)} className="text-muted-foreground hover:text-foreground transition-colors">
+                        {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
-                    <Badge variant="secondary" className="text-xs">{g.items.length} lançamento{g.items.length > 1 ? "s" : ""}</Badge>
-                    <span className={`text-sm font-semibold ${g.type === "entrada" ? "text-success" : "text-destructive"}`}>
-                      {formatCurrency(g.totalAmount)}
-                    </span>
-                  </div>
+                  {/* Expanded items */}
+                  {expanded && (
+                    <div className="bg-muted/20 border-t border-border divide-y divide-border/50">
+                      {g.items.map((t) => {
+                        const isSelected = selectedIds.has(t.id);
+                        return (
+                          <div
+                            key={t.id}
+                            onClick={() => toggleItem(t.id)}
+                            className={`flex items-center gap-3 pl-12 pr-4 py-2 cursor-pointer transition-colors hover:bg-muted/40 ${isSelected ? "bg-primary/5" : ""}`}
+                          >
+                            {isSelected
+                              ? <CheckSquare className="w-3.5 h-3.5 text-primary shrink-0" />
+                              : <Square className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+                            <span className="text-xs text-muted-foreground w-20 shrink-0">
+                              {t.date ? format(new Date(t.date.substring(0, 10)), "dd/MM/yy", { locale: ptBR }) : "—"}
+                            </span>
+                            <span className="text-xs flex-1 truncate text-muted-foreground">{t.category || "Sem categoria"}</span>
+                            <span className={`text-xs font-semibold shrink-0 ${t.type === "entrada" ? "text-success" : "text-destructive"}`}>
+                              {t.type === "entrada" ? "+" : "-"}{formatCurrency(t.amount)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })
@@ -170,8 +212,8 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
 
         {/* Apply bar */}
         <div className="flex items-center gap-3 pt-2 border-t border-border">
-          <span className="text-sm text-muted-foreground shrink-0">
-            {selectedCount > 0 ? `${selectedCount} lançamento(s) selecionado(s)` : "Nenhum selecionado"}
+          <span className="text-sm text-muted-foreground shrink-0 min-w-0">
+            {selectedIds.size > 0 ? `${selectedIds.size} selecionado(s)` : "Nenhum selecionado"}
           </span>
           <div className="flex-1">
             <Select value={newCategory} onValueChange={setNewCategory}>
@@ -185,7 +227,7 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleApply} disabled={saving || selectedCount === 0 || !newCategory} className="shrink-0">
+          <Button onClick={handleApply} disabled={saving || selectedIds.size === 0 || !newCategory} className="shrink-0">
             {saving ? "Aplicando…" : "Aplicar"}
           </Button>
         </div>

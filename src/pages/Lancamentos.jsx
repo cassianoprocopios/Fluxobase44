@@ -254,6 +254,14 @@ export default function Lancamentos() {
 
       <OFXImportModal open={showOFX} onOpenChange={setShowOFX} />
 
+      <BulkClassifyModal
+        open={showClassify}
+        onOpenChange={setShowClassify}
+        transactions={filtered}
+        categories={categories}
+        onBulkUpdate={handleBulkUpdate}
+      />
+
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

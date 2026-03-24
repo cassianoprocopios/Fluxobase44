@@ -39,6 +39,11 @@ export default function Lancamentos() {
     search: "",
     type: "todos",
     month: currentMonth,
+    dateFrom: "",
+    dateTo: "",
+    unit: "",
+    bankAccount: "",
+    category: "",
   });
 
   // Busca apenas o mês selecionado no filtro para evitar carregar tudo

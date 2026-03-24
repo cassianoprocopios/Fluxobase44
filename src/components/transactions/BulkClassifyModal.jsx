@@ -136,11 +136,16 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
     if (selectedIds.size === 0) { toast.error("Selecione ao menos um lançamento."); return; }
     if (selectedType === "mixed") { toast.error("Mistura de entradas e saídas. Selecione apenas um tipo."); return; }
     setSaving(true);
-    await onBulkUpdate([...selectedIds], newCategory);
-    setSaving(false);
-    toast.success(`${selectedIds.size} lançamento(s) atualizados!`);
-    setSelectedIds(new Set());
-    setNewCategory("");
+    try {
+      await onBulkUpdate([...selectedIds], newCategory);
+      toast.success(`${selectedIds.size} lançamento(s) atualizados!`);
+      setSelectedIds(new Set());
+      setNewCategory("");
+    } catch (error) {
+      toast.error("Erro ao atualizar. Tente novamente.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));

@@ -102,6 +102,30 @@ export default function Usuarios() {
     setInviting(false);
   };
 
+  const handleCreateDirect = async () => {
+    if (!createEmail || !createEmail.includes("@")) {
+      toast.error("Informe um e-mail válido.");
+      return;
+    }
+    setCreating(true);
+    try {
+      const res = await base44.functions.invoke('createDirectUser', {
+        email: createEmail,
+        full_name: createName,
+        role: createRole,
+      });
+      toast.success(`Usuário ${createEmail} criado com sucesso!`);
+      setShowCreateDirect(false);
+      setCreateEmail("");
+      setCreateName("");
+      setCreateRole("colaborador");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    } catch (e) {
+      toast.error("Erro ao criar usuário. Verifique se o e-mail já existe.");
+    }
+    setCreating(false);
+  };
+
   const openEdit = (user) => {
     setEditUser(user);
     setEditRole(user.role || "colaborador");

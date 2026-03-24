@@ -220,6 +220,42 @@ export default function OFXImportModal({ open, onOpenChange }) {
               )}
             </div>
             <input ref={inputRef} type="file" accept=".ofx,.csv,.txt" className="hidden" onChange={(e) => processFile(e.target.files[0])} />
+
+            {/* Exemplo de formato */}
+            <div className="border border-border rounded-xl p-4 bg-muted/20 text-xs space-y-2">
+              <p className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Exemplo de CSV aceito</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-border">
+                      {["Data", "Valor", "Descrição", "Categoria (opcional)"].map((h) => (
+                        <th key={h} className="px-2 py-1 font-semibold text-muted-foreground">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {[
+                      ["01/01/2026", "-150,00", "Mercado XYZ", "Alimentação"],
+                      ["05/01/2026", "3.500,00", "Pagamento cliente", "Receita Serviços"],
+                      ["10/01/2026", "-89,90", "Internet", ""],
+                    ].map((row, i) => (
+                      <tr key={i} className="hover:bg-muted/30">
+                        {row.map((cell, j) => (
+                          <td key={j} className="px-2 py-1 text-foreground/80 font-mono">{cell || <span className="text-muted-foreground italic">vazio</span>}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <ul className="text-muted-foreground space-y-0.5 mt-1">
+                <li>• Separador: <span className="font-mono font-semibold">,</span> ou <span className="font-mono font-semibold">;</span></li>
+                <li>• Data: <span className="font-mono">DD/MM/AAAA</span> ou <span className="font-mono">AAAA-MM-DD</span></li>
+                <li>• Valor negativo = Saída · Valor positivo = Entrada</li>
+                <li>• Coluna <span className="font-mono">Categoria</span> é usada automaticamente se presente</li>
+              </ul>
+            </div>
+
             {error && (
               <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">
                 <AlertCircle className="w-4 h-4 shrink-0" /> {error}

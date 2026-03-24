@@ -189,7 +189,7 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
                   {/* Group header row */}
                   <div className={`flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40 ${allGroupSelected ? "bg-primary/5" : someGroupSelected ? "bg-primary/3" : ""}`}>
                     {/* Checkbox group */}
-                    <button onClick={() => toggleGroup(g)} className="shrink-0">
+                    <button onClick={() => toggleGroupSafe(g)} className="shrink-0">
                       {allGroupSelected
                         ? <CheckSquare className="w-4 h-4 text-primary" />
                         : someGroupSelected

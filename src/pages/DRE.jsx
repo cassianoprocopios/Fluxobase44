@@ -439,7 +439,7 @@ export default function DRE() {
                 {/* ── GASTOS FIXOS ── */}
                 <SectionHeader label="Gastos Fixos" colorClass="bg-destructive/5 text-destructive" />
                 {dreData.fixedRows.map((row) => (
-                  <DRERow key={row.label} {...row} negative indent />
+                  <DrillRow key={row.label} row={row} negative />
                 ))}
                 <DRERow label="TOTAL GASTOS FIXOS" monthly={dreData.totalFixos} bold highlight negative />
 

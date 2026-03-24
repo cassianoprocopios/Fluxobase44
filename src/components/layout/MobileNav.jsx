@@ -11,12 +11,16 @@ import {
   X,
   DollarSign,
   LogOut,
+  Building2,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
+import { hasRouteAccess } from "@/lib/permissions";
 
 const NAV_ITEMS = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/lancamentos", icon: ArrowUpDown, label: "Lançamentos" },
+  { path: "/dashboard-unidades", icon: Building2, label: "Unidades" },
   { path: "/dre", icon: FileBarChart, label: "DRE" },
   { path: "/fluxo-caixa", icon: TrendingUp, label: "Fluxo de Caixa" },
   { path: "/relatorios", icon: FileText, label: "Relatórios" },
@@ -26,6 +30,9 @@ const NAV_ITEMS = [
 export default function MobileNav() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
+  const role = user?.role || "colaborador";
+  const visibleItems = NAV_ITEMS.filter((item) => hasRouteAccess(role, item.path));
 
   return (
     <>

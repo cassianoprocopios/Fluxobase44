@@ -128,6 +128,11 @@ export default function Lancamentos() {
     return transactions.filter((t) => {
       if (filters.type !== "todos" && t.type !== filters.type) return false;
       if (filters.month && t.date && !t.date.startsWith(filters.month)) return false;
+      if (filters.dateFrom && t.date && t.date < filters.dateFrom) return false;
+      if (filters.dateTo && t.date && t.date > filters.dateTo) return false;
+      if (filters.unit && t.cost_center !== filters.unit) return false;
+      if (filters.bankAccount && t.bank_account !== filters.bankAccount) return false;
+      if (filters.category && t.category !== filters.category) return false;
       if (
         filters.search &&
         !(t.description || "").toLowerCase().includes(filters.search.toLowerCase()) &&

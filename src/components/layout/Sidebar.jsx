@@ -15,6 +15,7 @@ import {
   LogOut,
   DollarSign,
   Building2,
+  Users,
 } from "lucide-react";
 
 const NAV_ITEMS = [

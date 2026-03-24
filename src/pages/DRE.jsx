@@ -521,7 +521,7 @@ export default function DRE() {
               </thead>
               <tbody className="divide-y divide-border">
 
-                {/* ── RECEITAS ── */}
+                {/* ── RECEITAS OPERACIONAIS ── */}
                 <SectionHeader label="Receitas Operacionais" colorClass="bg-success/8 text-success" />
                 {dreData.entryRows.map((row) => (
                   <DrillRow key={row.label} row={row} negative={false} />
@@ -529,7 +529,7 @@ export default function DRE() {
                 <DRERow label="TOTAL RECEITAS OPERACIONAIS" monthly={dreData.totalEntradas} bold highlight />
 
                 {/* ── CUSTOS VARIÁVEIS ── */}
-                <SectionHeader label="Custos Variáveis e Diretos" colorClass="bg-orange-50 text-orange-600" />
+                <SectionHeader label="Custos Variáveis" colorClass="bg-orange-50 text-orange-600" />
                 {dreData.variableRows.map((row) => (
                   <DrillRow key={row.label} row={row} negative />
                 ))}
@@ -551,23 +551,42 @@ export default function DRE() {
                 ))}
                 <DRERow label="TOTAL GASTOS FIXOS" monthly={dreData.totalFixos} bold highlight negative />
 
-                {/* ── EBITDA ── */}
+                {/* ── EBITDA / RESULTADO OPERACIONAL ── */}
                 <ResultRow
-                  label="EBITDA (Lucro antes de Juros, Impostos, Depr. e Amort.)"
-                  monthly={dreData.margemContribuicao.map((v, i) => v - dreData.totalFixos[i])}
-                  pctMonthly={dreData.totalEntradas.map((v, i) => {
-                    const ebitda = dreData.margemContribuicao[i] - dreData.totalFixos[i];
-                    return v > 0 ? (ebitda / v) * 100 : 0;
-                  })}
+                  label="EBITDA / RESULTADO OPERACIONAL"
+                  monthly={dreData.ebitda}
+                  pctMonthly={dreData.ebitdaPct}
                   colorFn={(v) => (v < 0 ? "text-destructive" : "text-primary")}
                   showPct
                 />
 
-                {/* ── LUCRO LÍQUIDO ── */}
+                {/* ── OUTRAS RECEITAS (abaixo da linha) ── */}
+                {dreData.outrasReceitasRows.length > 0 && (
+                  <>
+                    <SectionHeader label="Outras Receitas (Não Operacionais)" colorClass="bg-muted text-muted-foreground" />
+                    {dreData.outrasReceitasRows.map((row) => (
+                      <DrillRow key={row.label} row={row} negative={false} />
+                    ))}
+                    <DRERow label="TOTAL OUTRAS RECEITAS" monthly={dreData.totalOutrasReceitas} bold highlight />
+                  </>
+                )}
+
+                {/* ── ABAIXO DA LINHA ── */}
+                {dreData.abaixoLinhaRows.length > 0 && (
+                  <>
+                    <SectionHeader label="Saídas Não Operacionais / Investimentos" colorClass="bg-muted text-muted-foreground" />
+                    {dreData.abaixoLinhaRows.map((row) => (
+                      <DrillRow key={row.label} row={row} negative />
+                    ))}
+                    <DRERow label="TOTAL SAÍDAS NÃO OPERACIONAIS" monthly={dreData.totalAbaixoLinha} bold highlight negative />
+                  </>
+                )}
+
+                {/* ── SALDO FINAL DO PERÍODO ── */}
                 <ResultRow
-                  label="LUCRO LÍQUIDO"
-                  monthly={dreData.resultado}
-                  pctMonthly={dreData.margemLiquida}
+                  label="SALDO FINAL DO PERÍODO"
+                  monthly={dreData.saldoFinal}
+                  pctMonthly={dreData.totalEntradas.map((v, i) => v > 0 ? (dreData.saldoFinal[i] / v) * 100 : 0)}
                   colorFn={(v) => (v < 0 ? "text-destructive" : "text-success")}
                   showPct
                 />

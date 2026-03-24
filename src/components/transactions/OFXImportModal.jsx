@@ -202,8 +202,12 @@ export default function OFXImportModal({ open, onOpenChange }) {
             </div>
 
             <div
-              className="w-full border-2 border-dashed border-border rounded-xl p-10 flex flex-col items-center gap-4 cursor-pointer hover:border-primary/60 hover:bg-muted/20 transition-all"
-              onClick={() => !loading && inputRef.current?.click()}
+              className={`w-full border-2 border-dashed rounded-xl p-10 flex flex-col items-center gap-4 transition-all ${
+                !importUnit || !importBank
+                  ? "border-border opacity-50 cursor-not-allowed"
+                  : "border-border cursor-pointer hover:border-primary/60 hover:bg-muted/20"
+              }`}
+              onClick={() => !loading && importUnit && importBank && inputRef.current?.click()}
             >
               {loading ? (
                 <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -213,13 +217,17 @@ export default function OFXImportModal({ open, onOpenChange }) {
                     <FileText className="w-7 h-7 text-primary" />
                   </div>
                   <div className="text-center">
-                    <p className="font-semibold">Clique para selecionar o arquivo</p>
+                    {!importUnit || !importBank ? (
+                      <p className="font-semibold text-muted-foreground">Selecione a unidade e o banco acima</p>
+                    ) : (
+                      <p className="font-semibold">Clique para selecionar o arquivo</p>
+                    )}
                     <p className="text-sm text-muted-foreground mt-1">Formatos aceitos: .ofx, .csv, .txt</p>
                   </div>
                 </>
               )}
             </div>
-            <input ref={inputRef} type="file" accept=".ofx,.csv,.txt" className="hidden" onChange={(e) => processFile(e.target.files[0])} />
+            <input ref={inputRef} type="file" accept=".ofx,.csv,.txt" className="hidden" disabled={!importUnit || !importBank} onChange={(e) => processFile(e.target.files[0])} />
 
             {/* Exemplo de formato */}
             <div className="border border-border rounded-xl p-4 bg-muted/20 text-xs space-y-2">

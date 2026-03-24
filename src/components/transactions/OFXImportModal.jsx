@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckCircle2, AlertCircle, FileText, Sparkles, Check, Clock, AlertTriangle } from "lucide-react";
+import { CheckCircle2, AlertCircle, FileText, Sparkles, Check, Clock, AlertTriangle, ChevronDown, ChevronRight, CheckSquare, Square, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { formatCurrency } from "@/lib/constants";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";

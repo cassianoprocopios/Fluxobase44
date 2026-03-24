@@ -46,15 +46,15 @@ const AuthenticatedApp = () => {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/lancamentos" element={<Lancamentos />} />
-        <Route path="/dre" element={<DRE />} />
-        <Route path="/fluxo-caixa" element={<FluxoCaixa />} />
-        <Route path="/relatorios" element={<Relatorios />} />
-        <Route path="/configuracoes" element={<Configuracoes />} />
-        <Route path="/importar" element={<Importar />} />
-        <Route path="/recorrentes" element={<Recorrentes />} />
-        <Route path="/conciliacao" element={<Conciliacao />} />
-        <Route path="/regras-categorizacao" element={<RegrasCategorizacao />} />
-        <Route path="/dashboard-unidades" element={<DashboardUnidades />} />
+        <Route path="/dashboard-unidades" element={<ProtectedRoute><DashboardUnidades /></ProtectedRoute>} />
+        <Route path="/dre" element={<ProtectedRoute><DRE /></ProtectedRoute>} />
+        <Route path="/fluxo-caixa" element={<ProtectedRoute><FluxoCaixa /></ProtectedRoute>} />
+        <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
+        <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
+        <Route path="/importar" element={<ProtectedRoute><Importar /></ProtectedRoute>} />
+        <Route path="/recorrentes" element={<ProtectedRoute><Recorrentes /></ProtectedRoute>} />
+        <Route path="/conciliacao" element={<ProtectedRoute><Conciliacao /></ProtectedRoute>} />
+        <Route path="/regras-categorizacao" element={<ProtectedRoute><RegrasCategorizacao /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

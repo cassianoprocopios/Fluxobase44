@@ -96,18 +96,22 @@ export default function FluxoCaixa() {
       const geracaoCaixa = saldo;
       saldoAcumulado += saldo;
 
-      // Categorias de entradas
+      // Entradas agrupadas por dre_group
       const entradaCats = {};
       monthTxns.filter((t) => t.type === "entrada").forEach((t) => {
-        const cat = t.category || "Sem categoria";
-        entradaCats[cat] = (entradaCats[cat] || 0) + (t.amount || 0);
+        const catObj = categories.find((c) => c.name === t.category && c.type === "entrada");
+        const groupKey = (catObj?.dre_group && catObj.dre_group !== "Não DRE") ? catObj.dre_group : (t.category || "Sem categoria");
+        if (!entradaCats[groupKey]) entradaCats[groupKey] = { total: 0, cats: {} };
+        entradaCats[groupKey].total += t.amount || 0;
+        const catName = t.category || "Sem categoria";
+        entradaCats[groupKey].cats[catName] = (entradaCats[groupKey].cats[catName] || 0) + (t.amount || 0);
       });
 
-      // Categorias de saídas (agrupadas por dre_group ou categoria)
+      // Saídas agrupadas por dre_group
       const saidaCats = {};
       monthTxns.filter((t) => t.type === "saida").forEach((t) => {
         const catObj = categories.find((c) => c.name === t.category && c.type === "saida");
-        const groupKey = catObj?.dre_group || t.category || "Sem categoria";
+        const groupKey = (catObj?.dre_group && catObj.dre_group !== "Não DRE") ? catObj.dre_group : (t.category || "Sem categoria");
         if (!saidaCats[groupKey]) saidaCats[groupKey] = { total: 0, cats: {} };
         saidaCats[groupKey].total += t.amount || 0;
         const catName = t.category || "Sem categoria";

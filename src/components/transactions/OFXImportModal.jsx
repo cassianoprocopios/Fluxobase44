@@ -137,8 +137,16 @@ export default function OFXImportModal({ open, onOpenChange }) {
   const toggleItemIncluded = (id) => {
     setTransactions((prev) =>
       prev.map((t) =>
+        t._importId === id ? { ...t, excluded: !t.excluded } : t
+      )
+    );
+  };
+
+  const updateItemCategory = (id, cat) => {
+    setTransactions((prev) =>
+      prev.map((t) =>
         t._importId === id
-          ? { ...t, excluded: !t.excluded }
+          ? { ...t, category: cat, reviewStatus: cat ? "approved" : "pending" }
           : t
       )
     );

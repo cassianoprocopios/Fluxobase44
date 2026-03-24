@@ -263,9 +263,17 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
             {selectedIds.size > 0 ? `${selectedIds.size} selecionado(s)` : "Nenhum selecionado"}
           </span>
           <div className="flex-1">
-            <Select value={newCategory} onValueChange={setNewCategory}>
+            <Select
+              value={newCategory}
+              onValueChange={setNewCategory}
+              disabled={!selectedType || selectedType === "mixed"}
+            >
               <SelectTrigger className="h-9">
-                <SelectValue placeholder="Nova categoria..." />
+                <SelectValue placeholder={
+                  !selectedType ? "Selecione itens primeiro..." :
+                  selectedType === "mixed" ? "Tipos mistos — desfaça a seleção" :
+                  `Categoria de ${selectedType}...`
+                } />
               </SelectTrigger>
               <SelectContent>
                 {categoryOptions.map((cat) => (
@@ -274,7 +282,7 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleApply} disabled={saving || selectedIds.size === 0 || !newCategory} className="shrink-0">
+          <Button onClick={handleApply} disabled={saving || selectedIds.size === 0 || !newCategory || selectedType === "mixed"} className="shrink-0">
             {saving ? "Aplicando…" : "Aplicar"}
           </Button>
         </div>

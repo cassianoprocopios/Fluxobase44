@@ -104,6 +104,7 @@ export default function OFXImportModal({ open, onOpenChange }) {
     reader.onload = (e) => {
       let rawTxns = [];
       if (ext === "csv") rawTxns = parseCSV(e.target.result);
+      else if (ext === "txt") rawTxns = parseBradesco(e.target.result);
       else rawTxns = parseOFX(e.target.result);
 
       if (rawTxns.length === 0) {

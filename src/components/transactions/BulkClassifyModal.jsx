@@ -284,34 +284,36 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
         </div>
 
         {/* Apply bar */}
-        <div className="flex items-center gap-3 pt-2 border-t border-border">
-          <span className="text-sm text-muted-foreground shrink-0 min-w-0">
-            {selectedIds.size > 0 ? `${selectedIds.size} selecionado(s)` : "Nenhum selecionado"}
-          </span>
-          <div className="flex-1">
-            <Select
-              value={newCategory}
-              onValueChange={setNewCategory}
-              disabled={!selectedType || selectedType === "mixed"}
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder={
-                  !selectedType ? "Selecione itens primeiro..." :
-                  selectedType === "mixed" ? "Tipos mistos — desfaça a seleção" :
-                  `Categoria de ${selectedType}...`
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                {categoryOptions.map((cat) => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {unclassifiedTransactions.length > 0 && (
+          <div className="flex items-center gap-3 pt-2 border-t border-border">
+            <span className="text-sm text-muted-foreground shrink-0 min-w-0">
+              {selectedIds.size > 0 ? `${selectedIds.size} selecionado(s)` : "Nenhum selecionado"}
+            </span>
+            <div className="flex-1">
+              <Select
+                value={newCategory}
+                onValueChange={setNewCategory}
+                disabled={!selectedType || selectedType === "mixed"}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder={
+                    !selectedType ? "Selecione itens primeiro..." :
+                    selectedType === "mixed" ? "Tipos mistos — desfaça a seleção" :
+                    `Categoria de ${selectedType}...`
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoryOptions.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleApply} disabled={saving || selectedIds.size === 0 || !newCategory || selectedType === "mixed"} className="shrink-0">
+              {saving ? "Aplicando…" : "Aplicar"}
+            </Button>
           </div>
-          <Button onClick={handleApply} disabled={saving || selectedIds.size === 0 || !newCategory || selectedType === "mixed"} className="shrink-0">
-            {saving ? "Aplicando…" : "Aplicar"}
-          </Button>
-        </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>

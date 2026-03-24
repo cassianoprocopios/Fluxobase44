@@ -56,6 +56,7 @@ const AuthenticatedApp = () => {
         <Route path="/recorrentes" element={<ProtectedRoute><Recorrentes /></ProtectedRoute>} />
         <Route path="/conciliacao" element={<ProtectedRoute><Conciliacao /></ProtectedRoute>} />
         <Route path="/regras-categorizacao" element={<ProtectedRoute><RegrasCategorizacao /></ProtectedRoute>} />
+        <Route path="/usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

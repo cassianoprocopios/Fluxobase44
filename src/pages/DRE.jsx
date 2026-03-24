@@ -15,7 +15,7 @@ import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants
 import AIFinancialAnalysis from "@/components/analysis/AIFinancialAnalysis";
 
 // Grupos de custos variáveis / diretos para cálculo da margem de contribuição
-const CUSTOS_VARIAVEIS_GROUPS = ["Custos Diretos", "Gastos Variáveis", "Impostos"];
+const CUSTOS_VARIAVEIS_GROUPS = ["Impostos e Financeiros", "Despesas Variáveis", "Custos Variáveis"];
 
 export default function DRE() {
   const currentYear = new Date().getFullYear();

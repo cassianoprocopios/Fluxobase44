@@ -423,7 +423,7 @@ export default function DRE() {
                 {/* ── CUSTOS VARIÁVEIS ── */}
                 <SectionHeader label="Custos Variáveis e Diretos" colorClass="bg-orange-50 text-orange-600" />
                 {dreData.variableRows.map((row) => (
-                  <DRERow key={row.label} {...row} negative indent />
+                  <DrillRow key={row.label} row={row} negative />
                 ))}
                 <DRERow label="TOTAL CUSTOS VARIÁVEIS" monthly={dreData.totalVariaveis} bold highlight negative />
 

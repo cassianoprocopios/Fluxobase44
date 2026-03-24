@@ -233,7 +233,7 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
                         return (
                           <div
                             key={t.id}
-                            onClick={() => toggleItem(t.id)}
+                            onClick={() => toggleItemSafe(t.id)}
                             className={`flex items-center gap-3 pl-12 pr-4 py-2 cursor-pointer transition-colors hover:bg-muted/40 ${isSelected ? "bg-primary/5" : ""}`}
                           >
                             {isSelected

@@ -130,31 +130,92 @@ export default function OFXImportModal({ open, onOpenChange }) {
     reader.readAsText(file, "latin1");
   };
 
-  const approveItem = (i) => {
-    setTransactions((prev) =>
-      prev.map((t, idx) => idx === i ? { ...t, reviewStatus: "approved" } : t)
-    );
-  };
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
+  const [bulkCategory, setBulkCategory] = useState({ entrada: "", saida: "" });
 
-  const updateCategory = (i, cat) => {
+  const updateCategory = (descKey, cat) => {
     setTransactions((prev) =>
-      prev.map((t, idx) =>
-        idx === i ? { ...t, category: cat, reviewStatus: cat ? "approved" : "pending" } : t
+      prev.map((t) =>
+        (t.description || "Sem descrição").trim().toLowerCase() === descKey
+          ? { ...t, category: cat, reviewStatus: cat ? "approved" : "pending" }
+          : t
       )
     );
   };
 
-  const approveAllSuggested = () => {
+  const toggleItemIncluded = (id) => {
     setTransactions((prev) =>
-      prev.map((t) => t.reviewStatus === "suggested" ? { ...t, reviewStatus: "approved" } : t)
+      prev.map((t) =>
+        t._importId === id
+          ? { ...t, excluded: !t.excluded }
+          : t
+      )
     );
   };
 
-  const stats = useMemo(() => ({
-    approved: transactions.filter((t) => t.reviewStatus === "approved").length,
-    suggested: transactions.filter((t) => t.reviewStatus === "suggested").length,
-    pending: transactions.filter((t) => t.reviewStatus === "pending").length,
-  }), [transactions]);
+  const toggleGroupIncluded = (descKey) => {
+    const groupItems = transactions.filter(
+      (t) => (t.description || "Sem descrição").trim().toLowerCase() === descKey
+    );
+    const allExcluded = groupItems.every((t) => t.excluded);
+    setTransactions((prev) =>
+      prev.map((t) =>
+        (t.description || "Sem descrição").trim().toLowerCase() === descKey
+          ? { ...t, excluded: !allExcluded }
+          : t
+      )
+    );
+  };
+
+  const toggleExpand = (key) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
+  const applyBulkCategory = (type) => {
+    const cat = bulkCategory[type];
+    if (!cat) { toast.error("Selecione uma categoria primeiro."); return; }
+    setTransactions((prev) =>
+      prev.map((t) =>
+        t.type === type && !t.excluded
+          ? { ...t, category: cat, reviewStatus: "approved" }
+          : t
+      )
+    );
+    toast.success(`Categoria "${cat}" aplicada a todos os ${type === "entrada" ? "entradas" : "saídas"} incluídos.`);
+  };
+
+  // Assign stable import IDs once
+  const txWithIds = useMemo(() => {
+    return transactions.map((t, i) => t._importId !== undefined ? t : { ...t, _importId: i });
+  }, []); // intentionally static — we manage via setTransactions below
+
+  const groups = useMemo(() => {
+    const map = new Map();
+    for (const t of transactions) {
+      const key = (t.description || "Sem descrição").trim().toLowerCase();
+      if (!map.has(key)) {
+        map.set(key, { key, label: (t.description || "Sem descrição").trim(), type: t.type, items: [], totalAmount: 0 });
+      }
+      const g = map.get(key);
+      g.items.push(t);
+      g.totalAmount += t.amount || 0;
+    }
+    return Array.from(map.values()).sort((a, b) => b.items.length - a.items.length);
+  }, [transactions]);
+
+  const stats = useMemo(() => {
+    const active = transactions.filter((t) => !t.excluded);
+    return {
+      approved: active.filter((t) => t.reviewStatus === "approved").length,
+      suggested: active.filter((t) => t.reviewStatus === "suggested").length,
+      pending: active.filter((t) => t.reviewStatus === "pending").length,
+      excluded: transactions.filter((t) => t.excluded).length,
+    };
+  }, [transactions]);
 
   const categoryOptionsByType = useMemo(() => {
     const entrada = [...new Set(categories.filter((c) => c.type === "entrada").map((c) => c.name))].sort();

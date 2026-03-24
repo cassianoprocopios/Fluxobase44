@@ -195,7 +195,7 @@ export default function Lancamentos() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {lastCreatedId && (
+          {canCreate && lastCreatedId && (
             <Button
               variant="outline"
               size="sm"
@@ -207,34 +207,42 @@ export default function Lancamentos() {
               Desfazer último
             </Button>
           )}
-        <Button variant="outline" size="sm" onClick={() => setShowClassify(true)} disabled={filtered.length === 0}>
-          <Tags className="w-4 h-4 mr-2" />
-          Classificar
-        </Button>
-        <Link to="/conciliacao">
-          <Button variant="outline" size="sm">
-            <ArrowLeftRight className="w-4 h-4 mr-2" />
-            Conciliação
+          {canEdit && (
+            <Button variant="outline" size="sm" onClick={() => setShowClassify(true)} disabled={filtered.length === 0}>
+              <Tags className="w-4 h-4 mr-2" />
+              Classificar
+            </Button>
+          )}
+          {canImport && (
+            <Link to="/conciliacao">
+              <Button variant="outline" size="sm">
+                <ArrowLeftRight className="w-4 h-4 mr-2" />
+                Conciliação
+              </Button>
+            </Link>
+          )}
+          {canImport && (
+            <Button variant="outline" size="sm" onClick={() => setShowOFX(true)}>
+              <Upload className="w-4 h-4 mr-2" />
+              Importar
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={filtered.length === 0}>
+            <Download className="w-4 h-4 mr-2" />
+            Exportar CSV
           </Button>
-        </Link>
-        <Button variant="outline" size="sm" onClick={() => setShowOFX(true)}>
-          <Upload className="w-4 h-4 mr-2" />
-          Importar
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={filtered.length === 0}>
-          <Download className="w-4 h-4 mr-2" />
-          Exportar CSV
-        </Button>
-          <Button
-            size="sm"
-            onClick={() => {
-              setEditingTx(null);
-              setShowForm(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Lançamento
-          </Button>
+          {canCreate && (
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingTx(null);
+                setShowForm(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Lançamento
+            </Button>
+          )}
         </div>
       </div>
 

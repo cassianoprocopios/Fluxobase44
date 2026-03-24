@@ -13,22 +13,29 @@ import { Search, SlidersHorizontal, X } from "lucide-react";
 export default function TransactionFilters({ filters, setFilters, categories, costCenters, bankAccounts }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const update = (field, value) => {
-    setFilters((prev) => ({ ...prev, [field]: value }));
+  // Estado local dos filtros avançados — só aplica ao clicar em Buscar
+  const [draft, setDraft] = useState({
+    dateFrom: filters.dateFrom || "",
+    dateTo: filters.dateTo || "",
+    unit: filters.unit || "",
+    bankAccount: filters.bankAccount || "",
+    category: filters.category || "",
+  });
+
+  const updateDraft = (field, value) => setDraft((prev) => ({ ...prev, [field]: value }));
+
+  const applyAdvanced = () => {
+    setFilters((prev) => ({ ...prev, ...draft }));
+    setShowAdvanced(false);
   };
 
   const clearFilters = () => {
-    setFilters((prev) => ({
-      search: "",
-      type: "todos",
-      month: prev.month, // mantém o mês selecionado
-      dateFrom: "",
-      dateTo: "",
-      unit: "",
-      bankAccount: "",
-      category: "",
-    }));
+    const cleared = { dateFrom: "", dateTo: "", unit: "", bankAccount: "", category: "" };
+    setDraft(cleared);
+    setFilters((prev) => ({ ...prev, search: "", type: "todos", ...cleared }));
   };
+
+  const update = (field, value) => setFilters((prev) => ({ ...prev, [field]: value }));
 
   const hasActiveAdvancedFilters =
     filters.dateFrom || filters.dateTo || filters.unit || filters.bankAccount || filters.category;
@@ -90,66 +97,75 @@ export default function TransactionFilters({ filters, setFilters, categories, co
 
       {/* Filtros avançados */}
       {showAdvanced && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 bg-muted/30 border border-border rounded-xl">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Data inicial</label>
-            <Input
-              type="date"
-              value={filters.dateFrom}
-              onChange={(e) => update("dateFrom", e.target.value)}
-              className="h-8 text-sm"
-            />
+        <div className="space-y-3 p-4 bg-muted/30 border border-border rounded-xl">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Data inicial</label>
+              <Input
+                type="date"
+                value={draft.dateFrom}
+                onChange={(e) => updateDraft("dateFrom", e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Data final</label>
+              <Input
+                type="date"
+                value={draft.dateTo}
+                onChange={(e) => updateDraft("dateTo", e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Unidade</label>
+              <Select value={draft.unit || "all"} onValueChange={(v) => updateDraft("unit", v === "all" ? "" : v)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  {(costCenters || []).map((c) => (
+                    <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Conta bancária</label>
+              <Select value={draft.bankAccount || "all"} onValueChange={(v) => updateDraft("bankAccount", v === "all" ? "" : v)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  {(bankAccounts || []).map((b) => (
+                    <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Categoria</label>
+              <Select value={draft.category || "all"} onValueChange={(v) => updateDraft("category", v === "all" ? "" : v)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  {(categories || []).map((c) => (
+                    <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Data final</label>
-            <Input
-              type="date"
-              value={filters.dateTo}
-              onChange={(e) => update("dateTo", e.target.value)}
-              className="h-8 text-sm"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Unidade</label>
-            <Select value={filters.unit || "all"} onValueChange={(v) => update("unit", v === "all" ? "" : v)}>
-              <SelectTrigger className="h-8 text-sm">
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {(costCenters || []).map((c) => (
-                  <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Conta bancária</label>
-            <Select value={filters.bankAccount || "all"} onValueChange={(v) => update("bankAccount", v === "all" ? "" : v)}>
-              <SelectTrigger className="h-8 text-sm">
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {(bankAccounts || []).map((b) => (
-                  <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Categoria</label>
-            <Select value={filters.category || "all"} onValueChange={(v) => update("category", v === "all" ? "" : v)}>
-              <SelectTrigger className="h-8 text-sm">
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {(categories || []).map((c) => (
-                  <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowAdvanced(false)}>Cancelar</Button>
+            <Button size="sm" onClick={applyAdvanced} className="gap-1.5">
+              <Search className="w-3.5 h-3.5" />
+              Buscar
+            </Button>
           </div>
         </div>
       )}

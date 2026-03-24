@@ -12,6 +12,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants";
+import AIFinancialAnalysis from "@/components/analysis/AIFinancialAnalysis";
 
 // Grupos de custos variáveis / diretos para cálculo da margem de contribuição
 const CUSTOS_VARIAVEIS_GROUPS = ["Custos Diretos", "Gastos Variáveis", "Impostos"];

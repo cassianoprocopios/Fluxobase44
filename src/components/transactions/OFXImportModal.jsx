@@ -354,106 +354,120 @@ export default function OFXImportModal({ open, onOpenChange }) {
         {/* REVIEW */}
         {step === "review" && (
           <div className="flex-1 flex flex-col overflow-hidden gap-3">
+            {/* Stats bar */}
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="text-muted-foreground font-medium">{fileName} · {transactions.length} transações</span>
+              <span className="text-muted-foreground font-medium">{fileName} · {transactions.length} transações · {groups.length} grupos</span>
               <div className="flex items-center gap-2 ml-auto flex-wrap">
-                {stats.approved > 0 && (
-                  <span className="flex items-center gap-1 bg-success/10 text-success px-2.5 py-1 rounded-full font-medium">
-                    <Check className="w-3 h-3" /> {stats.approved} aprovados
-                  </span>
-                )}
-                {stats.suggested > 0 && (
-                  <span className="flex items-center gap-1 bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">
-                    <Sparkles className="w-3 h-3" /> {stats.suggested} aguardando aprovação
-                  </span>
-                )}
-                {stats.pending > 0 && (
-                  <span className="flex items-center gap-1 bg-amber-500/10 text-amber-600 px-2.5 py-1 rounded-full font-medium">
-                    <Clock className="w-3 h-3" /> {stats.pending} sem categoria
-                  </span>
-                )}
+                {stats.approved > 0 && <span className="flex items-center gap-1 bg-success/10 text-success px-2.5 py-1 rounded-full font-medium"><Check className="w-3 h-3" /> {stats.approved} aprovados</span>}
+                {stats.pending > 0 && <span className="flex items-center gap-1 bg-amber-500/10 text-amber-600 px-2.5 py-1 rounded-full font-medium"><Clock className="w-3 h-3" /> {stats.pending} sem categoria</span>}
+                {stats.excluded > 0 && <span className="flex items-center gap-1 bg-muted text-muted-foreground px-2.5 py-1 rounded-full font-medium">{stats.excluded} excluídos</span>}
               </div>
             </div>
 
-            {stats.suggested > 0 && (
-              <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
-                <span className="text-xs text-primary font-medium flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  {stats.suggested} lançamento(s) com categoria sugerida — revise e aprove
-                </span>
-                <Button size="sm" variant="outline" className="h-7 text-xs border-primary/30 text-primary hover:bg-primary/10" onClick={approveAllSuggested}>
-                  Aprovar todos
-                </Button>
-              </div>
-            )}
+            {/* Bulk category bars */}
+            <div className="grid grid-cols-2 gap-2">
+              {["entrada", "saida"].map((tipo) => (
+                <div key={tipo} className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${tipo === "entrada" ? "bg-success/5 border-success/20" : "bg-destructive/5 border-destructive/20"}`}>
+                  <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${tipo === "entrada" ? "bg-success/15" : "bg-destructive/15"}`}>
+                    {tipo === "entrada" ? <ArrowUpRight className="w-3 h-3 text-success" /> : <ArrowDownRight className="w-3 h-3 text-destructive" />}
+                  </div>
+                  <Select value={bulkCategory[tipo]} onValueChange={(v) => setBulkCategory((p) => ({ ...p, [tipo]: v }))}>
+                    <SelectTrigger className="h-7 text-xs flex-1">
+                      <SelectValue placeholder={`Categoria p/ todas as ${tipo === "entrada" ? "entradas" : "saídas"}...`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(categoryOptionsByType[tipo] || []).map((cat) => (
+                        <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button size="sm" variant="outline" className="h-7 text-xs shrink-0" onClick={() => applyBulkCategory(tipo)}>
+                    Aplicar
+                  </Button>
+                </div>
+              ))}
+            </div>
 
+            {/* Groups list */}
             <div className="overflow-y-auto flex-1 border border-border rounded-xl divide-y divide-border min-h-0">
-              {transactions.map((t, i) => {
-                const isPending = t.reviewStatus === "pending";
-                const isSuggested = t.reviewStatus === "suggested";
-                const isApproved = t.reviewStatus === "approved";
+              {groups.map((g) => {
+                const expanded = expandedGroups.has(g.key);
+                const allExcluded = g.items.every((t) => t.excluded);
+                const someExcluded = g.items.some((t) => t.excluded);
+                const groupCategory = g.items.find((t) => !t.excluded)?.category || g.items[0]?.category || "";
+                const groupStatus = allExcluded ? "excluded" : g.items.filter((t) => !t.excluded).every((t) => t.reviewStatus === "approved") ? "approved" : g.items.filter((t) => !t.excluded).some((t) => t.reviewStatus === "approved") ? "partial" : "pending";
 
                 return (
-                  <div
-                    key={t.id || i}
-                    className={`flex items-center gap-2.5 px-3 py-2.5 transition-colors ${
-                      isPending ? "bg-amber-50/50 dark:bg-amber-900/10" : ""
-                    }`}
-                  >
-                    <div className="shrink-0 w-6 flex justify-center">
-                      {isApproved && <Check className="w-4 h-4 text-success" />}
-                      {isSuggested && <Sparkles className="w-4 h-4 text-primary" />}
-                      {isPending && <Clock className="w-4 h-4 text-amber-500" />}
+                  <div key={g.key}>
+                    {/* Group header */}
+                    <div className={`flex items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-muted/30 ${allExcluded ? "opacity-40" : ""}`}>
+                      {/* Include/exclude toggle */}
+                      <button onClick={() => toggleGroupIncluded(g.key)} className="shrink-0" title={allExcluded ? "Incluir grupo" : "Excluir grupo"}>
+                        {allExcluded ? <Square className="w-4 h-4 text-muted-foreground" /> : someExcluded ? <div className="w-4 h-4 border-2 border-primary rounded-sm bg-primary/30" /> : <CheckSquare className="w-4 h-4 text-primary" />}
+                      </button>
+
+                      {/* Type icon */}
+                      <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${g.type === "entrada" ? "bg-success/10" : "bg-destructive/10"}`}>
+                        {g.type === "entrada" ? <ArrowUpRight className="w-3.5 h-3.5 text-success" /> : <ArrowDownRight className="w-3.5 h-3.5 text-destructive" />}
+                      </div>
+
+                      {/* Description + status */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{g.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {g.items.length} lançamento(s) ·{" "}
+                          {groupStatus === "approved" && <span className="text-success">✓ classificados</span>}
+                          {groupStatus === "pending" && <span className="text-amber-500">sem categoria</span>}
+                          {groupStatus === "partial" && <span className="text-primary">parcialmente classificados</span>}
+                        </p>
+                      </div>
+
+                      {/* Category select (applies to all in group) */}
+                      {!allExcluded && (
+                        <div className="shrink-0 w-44" onClick={(e) => e.stopPropagation()}>
+                          <Select value={groupCategory} onValueChange={(v) => updateCategory(g.key, v)}>
+                            <SelectTrigger className={`h-7 text-xs ${groupStatus === "approved" ? "border-success/50 bg-success/5" : "border-amber-400/70 bg-amber-50/50 dark:bg-amber-900/10"}`}>
+                              <SelectValue placeholder="Selecionar categoria..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(categoryOptionsByType[g.type] || []).map((cat) => (
+                                <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      {/* Total + expand */}
+                      <span className={`text-sm font-semibold shrink-0 w-20 text-right ${g.type === "entrada" ? "text-success" : "text-destructive"}`}>
+                        {g.type === "entrada" ? "+" : "-"}{formatCurrency(g.totalAmount)}
+                      </span>
+                      <button onClick={() => toggleExpand(g.key)} className="shrink-0 text-muted-foreground hover:text-foreground">
+                        {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </button>
                     </div>
 
-                    <span className="text-xs text-muted-foreground w-16 shrink-0">
-                      {t.date ? format(new Date(t.date.substring(0, 10)), "dd/MM/yy", { locale: ptBR }) : t.date}
-                    </span>
-
-                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0 ${
-                      t.type === "entrada" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-                    }`}>
-                      {t.type === "entrada" ? "E" : "S"}
-                    </span>
-
-                    <span className="text-sm flex-1 truncate min-w-0">{t.description || "Sem descrição"}</span>
-
-                    <div className="shrink-0 w-44" onClick={(e) => e.stopPropagation()}>
-                      <Select value={t.category || ""} onValueChange={(v) => updateCategory(i, v)}>
-                        <SelectTrigger className={`h-7 text-xs ${
-                          isPending ? "border-amber-400/70 bg-amber-50/50" :
-                          isSuggested ? "border-primary/50 bg-primary/5" :
-                          "border-success/50 bg-success/5"
-                        }`}>
-                          <SelectValue placeholder="Selecionar categoria..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(categoryOptionsByType[t.type] || []).map((cat) => (
-                            <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {isSuggested ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-xs border-success/50 text-success hover:bg-success/10 shrink-0"
-                        onClick={() => approveItem(i)}
-                      >
-                        <Check className="w-3 h-3 mr-1" />
-                        Ok
-                      </Button>
-                    ) : (
-                      <div className="w-16 shrink-0" />
+                    {/* Expanded sub-items */}
+                    {expanded && (
+                      <div className="bg-muted/20 border-t border-border/50 divide-y divide-border/30">
+                        {g.items.map((t) => (
+                          <div
+                            key={t._importId}
+                            className={`flex items-center gap-2.5 pl-10 pr-4 py-2 transition-colors hover:bg-muted/30 cursor-pointer ${t.excluded ? "opacity-40" : ""}`}
+                            onClick={() => toggleItemIncluded(t._importId)}
+                          >
+                            {t.excluded ? <Square className="w-3.5 h-3.5 text-muted-foreground shrink-0" /> : <CheckSquare className="w-3.5 h-3.5 text-primary shrink-0" />}
+                            <span className="text-xs text-muted-foreground w-16 shrink-0">
+                              {t.date ? format(new Date(t.date.substring(0, 10)), "dd/MM/yy", { locale: ptBR }) : "—"}
+                            </span>
+                            <span className="text-xs text-muted-foreground flex-1 truncate">{t.category || "Sem categoria"}</span>
+                            <span className={`text-xs font-semibold shrink-0 ${t.type === "entrada" ? "text-success" : "text-destructive"}`}>
+                              {t.type === "entrada" ? "+" : "-"}{formatCurrency(t.amount)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     )}
-
-                    <span className={`text-sm font-semibold shrink-0 w-24 text-right ${
-                      t.type === "entrada" ? "text-success" : "text-destructive"
-                    }`}>
-                      {t.type === "entrada" ? "+" : "-"}{formatCurrency(t.amount)}
-                    </span>
                   </div>
                 );
               })}
@@ -461,12 +475,8 @@ export default function OFXImportModal({ open, onOpenChange }) {
 
             <p className="text-xs text-muted-foreground">
               {stats.approved} aprovado(s) serão importados.
-              {stats.pending > 0 && (
-                <span className="text-amber-600 font-medium"> · {stats.pending} sem categoria ficarão de fora — classifique-os depois.</span>
-              )}
-              {stats.suggested > 0 && (
-                <span className="text-primary font-medium"> · {stats.suggested} aguardando aprovação.</span>
-              )}
+              {stats.pending > 0 && <span className="text-amber-600 font-medium"> · {stats.pending} sem categoria ficarão de fora.</span>}
+              {stats.excluded > 0 && <span className="text-muted-foreground"> · {stats.excluded} excluídos manualmente.</span>}
             </p>
           </div>
         )}

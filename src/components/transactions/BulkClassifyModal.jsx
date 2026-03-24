@@ -17,10 +17,15 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
   const [newCategory, setNewCategory] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Agrupa por descrição normalizada
+  // Filtra apenas transações sem classificação
+  const unclassifiedTransactions = useMemo(() => {
+    return transactions.filter((t) => !t.category || t.category.trim() === "");
+  }, [transactions]);
+
+  // Agrupa por descrição normalizada (apenas não classificados)
   const groups = useMemo(() => {
     const map = new Map();
-    for (const t of transactions) {
+    for (const t of unclassifiedTransactions) {
       const key = (t.description || "Sem descrição").trim().toLowerCase();
       if (!map.has(key)) {
         map.set(key, {
@@ -38,7 +43,7 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
       g.totalAmount += t.amount || 0;
     }
     return Array.from(map.values()).sort((a, b) => b.items.length - a.items.length);
-  }, [transactions]);
+  }, [unclassifiedTransactions]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return groups;

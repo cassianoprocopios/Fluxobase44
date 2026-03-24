@@ -198,6 +198,10 @@ export default function Lancamentos() {
               Desfazer último
             </Button>
           )}
+        <Button variant="outline" size="sm" onClick={() => setShowClassify(true)} disabled={filtered.length === 0}>
+          <Tags className="w-4 h-4 mr-2" />
+          Classificar
+        </Button>
         <Link to="/conciliacao">
           <Button variant="outline" size="sm">
             <ArrowLeftRight className="w-4 h-4 mr-2" />

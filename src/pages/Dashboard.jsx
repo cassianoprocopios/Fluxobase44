@@ -14,6 +14,7 @@ import KPICard from "@/components/dashboard/KPICard";
 import MonthlyChart from "@/components/dashboard/MonthlyChart";
 import CashFlowMini from "@/components/dashboard/CashFlowMini";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";
+import CashFlowAnalysis from "@/components/dashboard/CashFlowAnalysis";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Dashboard() {
@@ -245,6 +246,13 @@ export default function Dashboard() {
         <MonthlyChart data={monthlyData} />
         <CashFlowMini data={monthlyData} />
       </div>
+
+      <CashFlowAnalysis 
+        transactions={transactions} 
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+        selectedUnit={selectedUnit}
+      />
 
       <RecentTransactions transactions={transactions} />
     </div>

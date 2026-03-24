@@ -83,11 +83,58 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
     });
   };
 
-  const categoryOptions = useMemo(() => [...new Set(categories.map((c) => c.name))].sort(), [categories]);
+  // Detecta o tipo dos itens selecionados
+  const selectedType = useMemo(() => {
+    if (selectedIds.size === 0) return null;
+    const allTxns = transactions;
+    const types = new Set(allTxns.filter((t) => selectedIds.has(t.id)).map((t) => t.type));
+    if (types.size > 1) return "mixed";
+    return [...types][0];
+  }, [selectedIds, transactions]);
+
+  const categoryOptions = useMemo(() => {
+    if (!selectedType || selectedType === "mixed") return [];
+    return [...new Set(categories.filter((c) => c.type === selectedType).map((c) => c.name))].sort();
+  }, [categories, selectedType]);
+
+  // Impede selecionar item de tipo diferente dos já selecionados
+  const toggleItemSafe = (id) => {
+    const t = transactions.find((tx) => tx.id === id);
+    if (!t) return;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); return next; }
+      // Verifica tipo dos já selecionados
+      const existingTypes = new Set(transactions.filter((tx) => next.has(tx.id)).map((tx) => tx.type));
+      if (existingTypes.size > 0 && !existingTypes.has(t.type)) {
+        toast.error("Selecione apenas entradas ou apenas saídas por vez.");
+        return prev;
+      }
+      next.add(id);
+      return next;
+    });
+  };
+
+  const toggleGroupSafe = (g) => {
+    const ids = g.items.map((t) => t.id);
+    const allSelected = ids.every((id) => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds((prev) => { const next = new Set(prev); ids.forEach((id) => next.delete(id)); return next; });
+      return;
+    }
+    // Verifica se mistura tipos
+    const existingTypes = new Set(transactions.filter((t) => selectedIds.has(t.id)).map((t) => t.type));
+    if (existingTypes.size > 0 && !existingTypes.has(g.type)) {
+      toast.error("Selecione apenas entradas ou apenas saídas por vez.");
+      return;
+    }
+    setSelectedIds((prev) => { const next = new Set(prev); ids.forEach((id) => next.add(id)); return next; });
+  };
 
   const handleApply = async () => {
     if (!newCategory) { toast.error("Selecione uma categoria para aplicar."); return; }
     if (selectedIds.size === 0) { toast.error("Selecione ao menos um lançamento."); return; }
+    if (selectedType === "mixed") { toast.error("Mistura de entradas e saídas. Selecione apenas um tipo."); return; }
     setSaving(true);
     await onBulkUpdate([...selectedIds], newCategory);
     setSaving(false);

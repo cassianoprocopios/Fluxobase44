@@ -283,71 +283,117 @@ export default function FluxoCaixa() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted/80 border-b">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground sticky left-0 bg-muted/80 z-10 border-r">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground sticky left-0 bg-muted/80 z-10 border-r min-w-[160px]">
                     Mês
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Entradas
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Saídas
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Saldo
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Geração de Caixa
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l">
-                    Acumulado
-                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-[110px]">Entradas</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-[110px]">Saídas</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-[110px]">Saldo</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-[130px]">Geração de Caixa</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l min-w-[110px]">Acumulado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filteredData.map((row) => (
-                  <tr key={row.month} className="hover:bg-muted/30">
-                    <td className="px-4 py-2.5 font-medium sticky left-0 bg-card z-10 border-r">
-                      {row.month}
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-success">
-                      {formatCurrency(row.entradas)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-destructive">
-                      {formatCurrency(row.saidas)}
-                    </td>
-                    <td className={`px-4 py-2.5 text-right font-medium ${row.saldo >= 0 ? "text-success" : "text-destructive"}`}>
-                      {formatCurrency(row.saldo)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        row.geracaoCaixa > 0
-                          ? "bg-success/10 text-success"
-                          : row.geracaoCaixa < 0
-                          ? "bg-destructive/10 text-destructive"
-                          : "bg-muted text-muted-foreground"
-                      }`}>
-                        {row.geracaoCaixa > 0 ? "▲" : row.geracaoCaixa < 0 ? "▼" : "–"}
-                        {formatCurrency(Math.abs(row.geracaoCaixa))}
-                      </span>
-                    </td>
-                    <td className={`px-4 py-2.5 text-right font-semibold border-l ${row.acumulado >= 0 ? "text-success" : "text-destructive"}`}>
-                      {formatCurrency(row.acumulado)}
-                    </td>
-                  </tr>
-                ))}
+                {filteredData.map((row) => {
+                  const isExpanded = expandedMonths.has(row.month);
+                  const hasDetail = row.entradas > 0 || row.saidas > 0;
+                  return (
+                    <React.Fragment key={row.month}>
+                      {/* Linha do mês */}
+                      <tr
+                        className={`hover:bg-muted/30 transition-colors ${hasDetail ? "cursor-pointer" : ""}`}
+                        onClick={() => hasDetail && toggleMonth(row.month)}
+                      >
+                        <td className="px-4 py-2.5 font-medium sticky left-0 bg-card z-10 border-r">
+                          <span className="flex items-center gap-2">
+                            {hasDetail ? (
+                              isExpanded
+                                ? <ChevronDown className="w-3.5 h-3.5 text-primary shrink-0" />
+                                : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                            ) : <span className="w-3.5 shrink-0" />}
+                            {row.month}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-success">{formatCurrency(row.entradas)}</td>
+                        <td className="px-4 py-2.5 text-right text-destructive">{formatCurrency(row.saidas)}</td>
+                        <td className={`px-4 py-2.5 text-right font-medium ${row.saldo >= 0 ? "text-success" : "text-destructive"}`}>
+                          {formatCurrency(row.saldo)}
+                        </td>
+                        <td className="px-4 py-2.5 text-right">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            row.geracaoCaixa > 0 ? "bg-success/10 text-success" : row.geracaoCaixa < 0 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
+                          }`}>
+                            {row.geracaoCaixa > 0 ? "▲" : row.geracaoCaixa < 0 ? "▼" : "–"}
+                            {formatCurrency(Math.abs(row.geracaoCaixa))}
+                          </span>
+                        </td>
+                        <td className={`px-4 py-2.5 text-right font-semibold border-l ${row.acumulado >= 0 ? "text-success" : "text-destructive"}`}>
+                          {formatCurrency(row.acumulado)}
+                        </td>
+                      </tr>
+
+                      {/* Detalhe expandido */}
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={6} className="p-0 bg-muted/10 border-b border-border">
+                            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border/50">
+                              {/* Entradas por categoria */}
+                              <div className="p-3 space-y-1">
+                                <p className="text-xs font-bold uppercase tracking-wider text-success/80 flex items-center gap-1.5 mb-2">
+                                  <ArrowUpRight className="w-3.5 h-3.5" /> Entradas por Categoria
+                                </p>
+                                {Object.entries(row.entradaCats)
+                                  .sort((a, b) => b[1] - a[1])
+                                  .map(([cat, val]) => (
+                                    <div key={cat} className="flex items-center justify-between gap-3 py-1 px-2 rounded hover:bg-muted/30 transition-colors">
+                                      <span className="text-xs text-muted-foreground truncate">{cat}</span>
+                                      <span className="text-xs font-semibold text-success shrink-0">{formatCurrency(val)}</span>
+                                    </div>
+                                  ))}
+                                {Object.keys(row.entradaCats).length === 0 && (
+                                  <p className="text-xs text-muted-foreground italic px-2">Nenhuma entrada</p>
+                                )}
+                              </div>
+
+                              {/* Saídas por grupo DRE */}
+                              <div className="p-3 space-y-1">
+                                <p className="text-xs font-bold uppercase tracking-wider text-destructive/80 flex items-center gap-1.5 mb-2">
+                                  <ArrowDownRight className="w-3.5 h-3.5" /> Saídas por Grupo
+                                </p>
+                                {Object.entries(row.saidaCats)
+                                  .sort((a, b) => b[1].total - a[1].total)
+                                  .map(([group, data]) => (
+                                    <div key={group} className="space-y-0.5">
+                                      <div className="flex items-center justify-between gap-3 py-1 px-2 rounded bg-destructive/5">
+                                        <span className="text-xs font-semibold text-destructive/90 truncate">{group}</span>
+                                        <span className="text-xs font-bold text-destructive shrink-0">{formatCurrency(data.total)}</span>
+                                      </div>
+                                      {Object.entries(data.cats)
+                                        .sort((a, b) => b[1] - a[1])
+                                        .map(([cat, val]) => (
+                                          <div key={cat} className="flex items-center justify-between gap-3 py-0.5 pl-6 pr-2 rounded hover:bg-muted/30 transition-colors">
+                                            <span className="text-xs text-muted-foreground truncate">• {cat}</span>
+                                            <span className="text-xs font-medium text-destructive/80 shrink-0">{formatCurrency(val)}</span>
+                                          </div>
+                                        ))}
+                                    </div>
+                                  ))}
+                                {Object.keys(row.saidaCats).length === 0 && (
+                                  <p className="text-xs text-muted-foreground italic px-2">Nenhuma saída</p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
                 <tr className="bg-muted/50 font-bold">
-                  <td className="px-4 py-3 sticky left-0 bg-muted/50 z-10 border-r">
-                    TOTAL
-                  </td>
-                  <td className="px-4 py-3 text-right text-success">
-                    {formatCurrency(filteredData.reduce((s, r) => s + r.entradas, 0))}
-                  </td>
-                  <td className="px-4 py-3 text-right text-destructive">
-                    {formatCurrency(filteredData.reduce((s, r) => s + r.saidas, 0))}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {formatCurrency(filteredData.reduce((s, r) => s + r.saldo, 0))}
-                  </td>
+                  <td className="px-4 py-3 sticky left-0 bg-muted/50 z-10 border-r">TOTAL</td>
+                  <td className="px-4 py-3 text-right text-success">{formatCurrency(filteredData.reduce((s, r) => s + r.entradas, 0))}</td>
+                  <td className="px-4 py-3 text-right text-destructive">{formatCurrency(filteredData.reduce((s, r) => s + r.saidas, 0))}</td>
+                  <td className="px-4 py-3 text-right">{formatCurrency(filteredData.reduce((s, r) => s + r.saldo, 0))}</td>
                   <td className="px-4 py-3 text-right">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
                       totalGeracao > 0 ? "bg-success/10 text-success" : totalGeracao < 0 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"

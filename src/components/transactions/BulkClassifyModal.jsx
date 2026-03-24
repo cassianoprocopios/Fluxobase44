@@ -144,8 +144,13 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
     try {
       await onBulkUpdate([...selectedIds], newCategory);
       toast.success(`${selectedIds.size} lançamento(s) atualizados!`);
+      // Limpa seleção e categoria para próxima classificação
       setSelectedIds(new Set());
       setNewCategory("");
+      // Se não houver mais itens, fecha o modal
+      if (unclassifiedTransactions.length - selectedIds.size === 0) {
+        setTimeout(() => onOpenChange(false), 1000);
+      }
     } catch (error) {
       toast.error("Erro ao atualizar. Tente novamente.");
     } finally {

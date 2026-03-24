@@ -118,7 +118,12 @@ export default function Usuarios() {
             Gerencie o acesso e os perfis dos usuários do sistema
           </p>
         </div>
-        <Button onClick={() => setShowInvite(true)} className="gap-2">
+        <Button 
+          onClick={() => setShowInvite(true)} 
+          className="gap-2"
+          disabled={me?.role !== 'admin'}
+          title={me?.role !== 'admin' ? 'Apenas administradores podem convidar usuários' : ''}
+        >
           <UserPlus className="w-4 h-4" />
           Convidar Usuário
         </Button>

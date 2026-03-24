@@ -213,14 +213,7 @@ export default function Lancamentos() {
               Classificar
             </Button>
           )}
-          {canImport && (
-            <Link to="/conciliacao">
-              <Button variant="outline" size="sm">
-                <ArrowLeftRight className="w-4 h-4 mr-2" />
-                Conciliação
-              </Button>
-            </Link>
-          )}
+
           {canImport && (
             <Button variant="outline" size="sm" onClick={() => setShowOFX(true)}>
               <Upload className="w-4 h-4 mr-2" />

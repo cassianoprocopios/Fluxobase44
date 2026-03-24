@@ -14,8 +14,25 @@ import { ChevronRight, ChevronDown } from "lucide-react";
 import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants";
 import AIFinancialAnalysis from "@/components/analysis/AIFinancialAnalysis";
 
-// Grupos de custos variáveis / diretos para cálculo da margem de contribuição
+// Grupos que compõem os Custos Variáveis (para margem de contribuição)
 const CUSTOS_VARIAVEIS_GROUPS = ["Impostos e Financeiros", "Despesas Variáveis", "Custos Variáveis"];
+
+// Grupos de receitas que NÃO entram no resultado operacional (Outras Receitas)
+const OUTRAS_RECEITAS_GROUPS = ["Outras Receitas"];
+
+// Grupos de saídas que ficam "abaixo da linha" (não são despesas operacionais)
+const ABAIXO_DA_LINHA_GROUPS = ["Investimentos", "Distribuição de Lucros", "Saídas não Operacionais", "Livre 2", "Livre 3", "Não DRE"];
+
+// Ordem desejada para os grupos de gastos fixos
+const GASTOS_FIXOS_ORDER = [
+  "Despesas Administrativas",
+  "Despesas com Pessoal",
+  "Despesas Operacionais",
+  "Despesas Comerciais",
+  "Despesas com Diretoria",
+  "Despesas Financeiras",
+  "Despesas Tributárias",
+];
 
 export default function DRE() {
   const currentYear = new Date().getFullYear();

@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, ArrowLeftRight, Download, Upload, Undo2 } from "lucide-react";
+import { Plus, Upload, ArrowLeftRight, Download, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { normalizeTransaction } from "@/lib/constants";
 import TransactionForm from "@/components/transactions/TransactionForm";
@@ -203,15 +203,9 @@ export default function Lancamentos() {
           </Button>
         </Link>
         <Button variant="outline" size="sm" onClick={() => setShowOFX(true)}>
-          <FileText className="w-4 h-4 mr-2" />
-          Importar OFX
+          <Upload className="w-4 h-4 mr-2" />
+          Importar
         </Button>
-        <Link to="/importar">
-          <Button variant="outline" size="sm">
-            <Upload className="w-4 h-4 mr-2" />
-            Importar
-          </Button>
-        </Link>
         <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={filtered.length === 0}>
           <Download className="w-4 h-4 mr-2" />
           Exportar CSV

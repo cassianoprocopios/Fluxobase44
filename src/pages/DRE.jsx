@@ -21,15 +21,19 @@ export default function DRE() {
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedUnit, setSelectedUnit] = useState("all");
-  const [expandedEntryGroups, setExpandedEntryGroups] = useState(new Set());
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
 
-  const toggleEntryGroup = (label) => {
-    setExpandedEntryGroups((prev) => {
+  const toggleGroup = (label) => {
+    setExpandedGroups((prev) => {
       const next = new Set(prev);
       next.has(label) ? next.delete(label) : next.add(label);
       return next;
     });
   };
+
+  // keep old alias so receitas code still works
+  const expandedEntryGroups = expandedGroups;
+  const toggleEntryGroup = toggleGroup;
 
   const { data: rawTransactions = [], isLoading } = useQuery({
     queryKey: ["transactions"],

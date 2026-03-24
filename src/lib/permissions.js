@@ -26,6 +26,7 @@ export const ROUTE_PERMISSIONS = {
   "/recorrentes":           [ROLES.ADMIN, ROLES.FINANCEIRO],
   "/regras-categorizacao":  [ROLES.ADMIN, ROLES.FINANCEIRO],
   "/configuracoes":         [ROLES.ADMIN],
+  "/usuarios":              [ROLES.ADMIN],
 };
 
 // Quais roles podem executar ações específicas

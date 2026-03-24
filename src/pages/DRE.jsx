@@ -102,78 +102,138 @@ export default function DRE() {
       return totals;
     };
 
-    // Entry groups — excluir grupo "Não DRE" das receitas
-    const entryRows = Object.entries(entryGroups)
-      .filter(([group]) => group !== "Não DRE")
-      .map(([group, cats]) => ({
-        label: group,
-        monthly: getMonthlyTotals((t) => t.type === "entrada" && cats.includes(t.category)),
+    const makeRow = (group, cats) => ({
+      label: group,
+      monthly: getMonthlyTotals((t) => t.type === (cats[0] ? categories.find(c => c.name === cats[0])?.type : "saida") && cats.includes(t.category)),
+      isGroup: true,
+      subRows: [...new Set(cats)].map((cat) => ({
+        label: cat,
+        monthly: getMonthlyTotals((t) => t.category === cat),
+      })).filter((sr) => sr.monthly.some((v) => v > 0)),
+    });
+
+    // ── RECEITAS OPERACIONAIS (excluir Não DRE e Outras Receitas)
+    const opRevenueGroups = ["Recebimentos de Vendas", "Receitas Financeiras"];
+    const entryRows = opRevenueGroups
+      .filter((g) => entryGroups[g])
+      .map((g) => ({
+        label: g,
+        monthly: getMonthlyTotals((t) => t.type === "entrada" && (entryGroups[g] || []).includes(t.category)),
         isGroup: true,
-        // sub-categorias para drill-down
-        subRows: [...new Set(cats)].map((cat) => ({
+        subRows: [...new Set(entryGroups[g] || [])].map((cat) => ({
           label: cat,
           monthly: getMonthlyTotals((t) => t.type === "entrada" && t.category === cat),
         })).filter((sr) => sr.monthly.some((v) => v > 0)),
       }));
 
-    // Categorias que pertencem a algum grupo (incluindo Não DRE)
-    const groupedEntryCats = Object.values(entryGroups).flat();
+    // Entradas não mapeadas nos grupos operacionais (exceto Não DRE e Outras Receitas)
+    const knownEntryGroups = [...opRevenueGroups, "Não DRE", ...OUTRAS_RECEITAS_GROUPS];
+    const knownEntryCats = knownEntryGroups.flatMap((g) => entryGroups[g] || []);
     const ungroupedEntries = getMonthlyTotals(
-      (t) => t.type === "entrada" && !groupedEntryCats.includes(t.category)
+      (t) => t.type === "entrada" && !knownEntryCats.includes(t.category)
     );
     if (ungroupedEntries.some((v) => v > 0)) {
-      entryRows.push({ label: "Outras Receitas", monthly: ungroupedEntries, isGroup: true, subRows: [] });
+      entryRows.push({ label: "Outras Entradas", monthly: ungroupedEntries, isGroup: true, subRows: [] });
     }
 
     const totalEntradas = Array(12).fill(0);
     entryRows.forEach((r) => r.monthly.forEach((v, i) => (totalEntradas[i] += v)));
 
-    // Exit groups - separar fixos de variáveis
-    const allExitRows = Object.entries(exitGroups)
-      .filter(([g]) => g !== "Não DRE")
-      .map(([group, cats]) => ({
-        label: group,
-        monthly: getMonthlyTotals((t) => t.type === "saida" && cats.includes(t.category)),
+    // ── OUTRAS RECEITAS (aportes, empréstimos, etc.)
+    const outrasReceitasRows = OUTRAS_RECEITAS_GROUPS
+      .filter((g) => entryGroups[g])
+      .map((g) => ({
+        label: g,
+        monthly: getMonthlyTotals((t) => t.type === "entrada" && (entryGroups[g] || []).includes(t.category)),
         isGroup: true,
-        isVariable: CUSTOS_VARIAVEIS_GROUPS.includes(group),
-        subRows: [...new Set(cats)].map((cat) => ({
+        subRows: [...new Set(entryGroups[g] || [])].map((cat) => ({
+          label: cat,
+          monthly: getMonthlyTotals((t) => t.type === "entrada" && t.category === cat),
+        })).filter((sr) => sr.monthly.some((v) => v > 0)),
+      }));
+
+    const totalOutrasReceitas = Array(12).fill(0);
+    outrasReceitasRows.forEach((r) => r.monthly.forEach((v, i) => (totalOutrasReceitas[i] += v)));
+
+    // ── CUSTOS VARIÁVEIS
+    const variableRows = CUSTOS_VARIAVEIS_GROUPS
+      .filter((g) => exitGroups[g])
+      .map((g) => ({
+        label: g,
+        monthly: getMonthlyTotals((t) => t.type === "saida" && (exitGroups[g] || []).includes(t.category)),
+        isGroup: true,
+        subRows: [...new Set(exitGroups[g] || [])].map((cat) => ({
           label: cat,
           monthly: getMonthlyTotals((t) => t.type === "saida" && t.category === cat),
         })).filter((sr) => sr.monthly.some((v) => v > 0)),
       }));
 
-    const groupedExitCats = Object.values(exitGroups).flat();
+    // saídas não mapeadas que não são abaixo da linha
+    const allKnownExitGroups = [...CUSTOS_VARIAVEIS_GROUPS, ...GASTOS_FIXOS_ORDER, ...ABAIXO_DA_LINHA_GROUPS];
+    const allKnownExitCats = allKnownExitGroups.flatMap((g) => exitGroups[g] || []);
     const ungroupedExits = getMonthlyTotals(
-      (t) => t.type === "saida" && !groupedExitCats.includes(t.category)
+      (t) => t.type === "saida" && !allKnownExitCats.includes(t.category)
     );
     if (ungroupedExits.some((v) => v > 0)) {
-      allExitRows.push({ label: "Outras Despesas", monthly: ungroupedExits, isGroup: true, isVariable: true, subRows: [] });
+      variableRows.push({ label: "Outras Despesas Variáveis", monthly: ungroupedExits, isGroup: true, subRows: [] });
     }
 
-    // Variáveis (para margem de contribuição)
-    const variableRows = allExitRows.filter((r) => r.isVariable);
     const totalVariaveis = Array(12).fill(0);
     variableRows.forEach((r) => r.monthly.forEach((v, i) => (totalVariaveis[i] += v)));
 
-    // Margem de contribuição = Receita - Custos Variáveis
+    // Margem de contribuição = Receitas Operacionais - Custos Variáveis
     const margemContribuicao = totalEntradas.map((v, i) => v - totalVariaveis[i]);
     const margemContribuicaoPct = totalEntradas.map((v, i) =>
       v > 0 ? (margemContribuicao[i] / v) * 100 : 0
     );
 
-    // Fixos
-    const fixedRows = allExitRows.filter((r) => !r.isVariable);
+    // ── GASTOS FIXOS (ordenados)
+    const fixedRows = GASTOS_FIXOS_ORDER
+      .filter((g) => exitGroups[g])
+      .map((g) => ({
+        label: g,
+        monthly: getMonthlyTotals((t) => t.type === "saida" && (exitGroups[g] || []).includes(t.category)),
+        isGroup: true,
+        subRows: [...new Set(exitGroups[g] || [])].map((cat) => ({
+          label: cat,
+          monthly: getMonthlyTotals((t) => t.type === "saida" && t.category === cat),
+        })).filter((sr) => sr.monthly.some((v) => v > 0)),
+      }));
+
     const totalFixos = Array(12).fill(0);
     fixedRows.forEach((r) => r.monthly.forEach((v, i) => (totalFixos[i] += v)));
 
-    const totalSaidas = Array(12).fill(0);
-    allExitRows.forEach((r) => r.monthly.forEach((v, i) => (totalSaidas[i] += v)));
+    // EBITDA = Margem de Contribuição - Gastos Fixos
+    const ebitda = margemContribuicao.map((v, i) => v - totalFixos[i]);
+    const ebitdaPct = totalEntradas.map((v, i) => v > 0 ? (ebitda[i] / v) * 100 : 0);
 
-    // Resultado líquido = receita - todas as despesas
-    const resultado = totalEntradas.map((v, i) => v - totalSaidas[i]);
+    // ── ABAIXO DA LINHA
+    const abaixoLinhaRows = ABAIXO_DA_LINHA_GROUPS
+      .filter((g) => exitGroups[g])
+      .map((g) => ({
+        label: g,
+        monthly: getMonthlyTotals((t) => t.type === "saida" && (exitGroups[g] || []).includes(t.category)),
+        isGroup: true,
+        subRows: [...new Set(exitGroups[g] || [])].map((cat) => ({
+          label: cat,
+          monthly: getMonthlyTotals((t) => t.type === "saida" && t.category === cat),
+        })).filter((sr) => sr.monthly.some((v) => v > 0)),
+      }));
+
+    const totalAbaixoLinha = Array(12).fill(0);
+    abaixoLinhaRows.forEach((r) => r.monthly.forEach((v, i) => (totalAbaixoLinha[i] += v)));
+
+    // Resultado operacional = EBITDA (sem abaixo da linha)
+    const resultado = ebitda;
     const margemLiquida = totalEntradas.map((v, i) =>
       v > 0 ? (resultado[i] / v) * 100 : 0
     );
+
+    // Saldo final = resultado + outras receitas - abaixo da linha
+    const saldoFinal = resultado.map((v, i) => v + totalOutrasReceitas[i] - totalAbaixoLinha[i]);
+
+    const totalSaidas = Array(12).fill(0);
+    [...variableRows, ...fixedRows, ...abaixoLinhaRows].forEach((r) => r.monthly.forEach((v, i) => (totalSaidas[i] += v)));
 
     return {
       entryRows,

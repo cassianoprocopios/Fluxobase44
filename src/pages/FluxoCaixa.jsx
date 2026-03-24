@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import AIFinancialAnalysis from "@/components/analysis/AIFinancialAnalysis";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";

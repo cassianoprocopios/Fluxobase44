@@ -33,6 +33,7 @@ export default function Lancamentos() {
   const [editingTx, setEditingTx] = useState(null);
   const [deleteTx, setDeleteTx] = useState(null);
   const [showOFX, setShowOFX] = useState(false);
+  const [showClassify, setShowClassify] = useState(false);
   const [lastCreatedId, setLastCreatedId] = useState(null);
   const currentMonth = new Date().toISOString().substring(0, 7); // "YYYY-MM"
 

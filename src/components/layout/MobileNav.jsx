@@ -12,6 +12,7 @@ import {
   DollarSign,
   LogOut,
   Building2,
+  Users,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";

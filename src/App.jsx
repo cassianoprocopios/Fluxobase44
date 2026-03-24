@@ -20,6 +20,7 @@ import Recorrentes from '@/pages/Recorrentes';
 import Conciliacao from '@/pages/Conciliacao';
 import RegrasCategorizacao from '@/pages/RegrasCategorizacao';
 import DashboardUnidades from '@/pages/DashboardUnidades';
+import Usuarios from '@/pages/Usuarios';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();

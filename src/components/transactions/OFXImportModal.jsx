@@ -156,9 +156,10 @@ export default function OFXImportModal({ open, onOpenChange }) {
     pending: transactions.filter((t) => t.reviewStatus === "pending").length,
   }), [transactions]);
 
-  const categoryOptions = useMemo(() => {
-    const cats = categories.map((c) => c.name);
-    return [...new Set(cats)].sort();
+  const categoryOptionsByType = useMemo(() => {
+    const entrada = [...new Set(categories.filter((c) => c.type === "entrada").map((c) => c.name))].sort();
+    const saida = [...new Set(categories.filter((c) => c.type === "saida").map((c) => c.name))].sort();
+    return { entrada, saida };
   }, [categories]);
 
   const handleImport = async () => {

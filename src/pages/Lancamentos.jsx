@@ -168,6 +168,11 @@ export default function Lancamentos() {
     URL.revokeObjectURL(url);
   };
 
+  const handleBulkUpdate = async (ids, category) => {
+    await Promise.all(ids.map((id) => base44.entities.Transaction.update(id, { category })));
+    invalidate();
+  };
+
   const handleSubmit = (data) => {
     if (editingTx) {
       updateMutation.mutate({ id: editingTx.id, data });

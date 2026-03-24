@@ -254,6 +254,68 @@ export default function Usuarios() {
         </CardContent>
       </Card>
 
+      {/* Modal: Criar usuário direto */}
+      <Dialog open={showCreateDirect} onOpenChange={setShowCreateDirect}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-primary" />
+              Criar Novo Usuário
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>E-mail *</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="email"
+                  placeholder="usuario@empresa.com"
+                  className="pl-9"
+                  value={createEmail}
+                  onChange={(e) => setCreateEmail(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Nome completo (opcional)</Label>
+              <Input
+                type="text"
+                placeholder="João Silva"
+                value={createName}
+                onChange={(e) => setCreateName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Perfil de acesso</Label>
+              <Select value={createRole} onValueChange={setCreateRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {createRole === "admin" && "Acesso total ao sistema, incluindo usuários e configurações."}
+                {createRole === "financeiro" && "Pode lançar, editar, importar e conciliar transações."}
+                {createRole === "gestor" && "Visualiza dashboards e relatórios, sem edição."}
+                {createRole === "colaborador" && "Visualiza apenas lançamentos, sem acesso a relatórios."}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDirect(false)}>Cancelar</Button>
+            <Button onClick={handleCreateDirect} disabled={creating} className="gap-2">
+              <UserPlus className="w-4 h-4" />
+              {creating ? "Criando…" : "Criar Usuário"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal: Convidar usuário */}
       <Dialog open={showInvite} onOpenChange={setShowInvite}>
         <DialogContent className="max-w-md">

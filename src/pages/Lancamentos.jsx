@@ -20,6 +20,7 @@ import {
 import { Plus, ArrowLeftRight, Download, Upload, Undo2, Tags } from "lucide-react";
 import { toast } from "sonner";
 import { normalizeTransaction } from "@/lib/constants";
+import { hasAction } from "@/lib/permissions";
 import TransactionForm from "@/components/transactions/TransactionForm";
 import TransactionTable from "@/components/transactions/TransactionTable";
 import TransactionFilters from "@/components/transactions/TransactionFilters";

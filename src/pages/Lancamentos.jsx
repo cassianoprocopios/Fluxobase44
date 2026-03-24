@@ -24,6 +24,7 @@ import TransactionForm from "@/components/transactions/TransactionForm";
 import TransactionTable from "@/components/transactions/TransactionTable";
 import TransactionFilters from "@/components/transactions/TransactionFilters";
 import OFXImportModal from "@/components/transactions/OFXImportModal";
+import BulkClassifyModal from "@/components/transactions/BulkClassifyModal";
 import { Link } from "react-router-dom";
 
 export default function Lancamentos() {

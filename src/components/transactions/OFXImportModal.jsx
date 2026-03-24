@@ -375,7 +375,7 @@ export default function OFXImportModal({ open, onOpenChange }) {
                           <SelectValue placeholder="Selecionar categoria..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {categoryOptions.map((cat) => (
+                          {(categoryOptionsByType[t.type] || []).map((cat) => (
                             <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
                           ))}
                         </SelectContent>

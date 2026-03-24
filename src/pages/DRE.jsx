@@ -79,19 +79,27 @@ export default function DRE() {
       return totals;
     };
 
-    // Entry groups
-    const entryRows = Object.entries(entryGroups).map(([group, cats]) => ({
-      label: group,
-      monthly: getMonthlyTotals((t) => t.type === "entrada" && cats.includes(t.category)),
-      isGroup: true,
-    }));
+    // Entry groups — excluir grupo "Não DRE" das receitas
+    const entryRows = Object.entries(entryGroups)
+      .filter(([group]) => group !== "Não DRE")
+      .map(([group, cats]) => ({
+        label: group,
+        monthly: getMonthlyTotals((t) => t.type === "entrada" && cats.includes(t.category)),
+        isGroup: true,
+        // sub-categorias para drill-down
+        subRows: [...new Set(cats)].map((cat) => ({
+          label: cat,
+          monthly: getMonthlyTotals((t) => t.type === "entrada" && t.category === cat),
+        })).filter((sr) => sr.monthly.some((v) => v > 0)),
+      }));
 
+    // Categorias que pertencem a algum grupo (incluindo Não DRE)
     const groupedEntryCats = Object.values(entryGroups).flat();
     const ungroupedEntries = getMonthlyTotals(
       (t) => t.type === "entrada" && !groupedEntryCats.includes(t.category)
     );
     if (ungroupedEntries.some((v) => v > 0)) {
-      entryRows.push({ label: "Outras Receitas", monthly: ungroupedEntries, isGroup: true });
+      entryRows.push({ label: "Outras Receitas", monthly: ungroupedEntries, isGroup: true, subRows: [] });
     }
 
     const totalEntradas = Array(12).fill(0);

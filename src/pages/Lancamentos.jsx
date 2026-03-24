@@ -86,6 +86,9 @@ export default function Lancamentos() {
   });
 
   const userRole = me?.role || "colaborador";
+  const canEdit = hasAction(userRole, "canEdit");
+  const canCreate = hasAction(userRole, "canCreate");
+  const canImport = hasAction(userRole, "canImport");
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["transactions", filters.month] });
 

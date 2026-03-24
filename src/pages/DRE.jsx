@@ -415,54 +415,9 @@ export default function DRE() {
 
                 {/* ── RECEITAS ── */}
                 <SectionHeader label="Receitas Operacionais" colorClass="bg-success/8 text-success" />
-                {dreData.entryRows.map((row) => {
-                  const isExpanded = expandedEntryGroups.has(row.label);
-                  const hasSubRows = row.subRows && row.subRows.length > 0;
-                  const visibleValues = visibleMonths.map(({ idx }) => row.monthly[idx] || 0);
-                  const total = visibleValues.reduce((s, v) => s + v, 0);
-                  return (
-                    <React.Fragment key={row.label}>
-                      <tr
-                        className={`hover:bg-muted/20 transition-colors ${hasSubRows ? "cursor-pointer" : ""}`}
-                        onClick={() => hasSubRows && toggleEntryGroup(row.label)}
-                      >
-                        <td className="px-4 py-2.5 text-sm whitespace-nowrap sticky left-0 bg-card z-10 border-r pl-8 text-muted-foreground">
-                          <span className="flex items-center gap-1.5">
-                            {hasSubRows ? (
-                              isExpanded
-                                ? <ChevronDown className="w-3.5 h-3.5 text-primary shrink-0" />
-                                : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                            ) : <span className="w-3.5 shrink-0" />}
-                            ↳ {row.label}
-                          </span>
-                        </td>
-                        {visibleValues.map((v, i) => (
-                          <td key={i} className="px-3 py-2.5 text-sm text-right whitespace-nowrap">{formatCurrency(v)}</td>
-                        ))}
-                        {selectedMonth === "all" && (
-                          <td className="px-3 py-2.5 text-sm text-right font-semibold whitespace-nowrap border-l">{formatCurrency(total)}</td>
-                        )}
-                      </tr>
-                      {isExpanded && hasSubRows && row.subRows.map((sub) => {
-                        const subVals = visibleMonths.map(({ idx }) => sub.monthly[idx] || 0);
-                        const subTotal = subVals.reduce((s, v) => s + v, 0);
-                        return (
-                          <tr key={sub.label} className="bg-success/3 hover:bg-success/5 transition-colors">
-                            <td className="px-4 py-2 text-xs whitespace-nowrap sticky left-0 bg-card z-10 border-r pl-16 text-muted-foreground">
-                              • {sub.label}
-                            </td>
-                            {subVals.map((v, i) => (
-                              <td key={i} className="px-3 py-2 text-xs text-right whitespace-nowrap text-success">{formatCurrency(v)}</td>
-                            ))}
-                            {selectedMonth === "all" && (
-                              <td className="px-3 py-2 text-xs text-right font-semibold whitespace-nowrap border-l text-success">{formatCurrency(subTotal)}</td>
-                            )}
-                          </tr>
-                        );
-                      })}
-                    </React.Fragment>
-                  );
-                })}
+                {dreData.entryRows.map((row) => (
+                  <DrillRow key={row.label} row={row} negative={false} />
+                ))}
                 <DRERow label="TOTAL RECEITAS OPERACIONAIS" monthly={dreData.totalEntradas} bold highlight />
 
                 {/* ── CUSTOS VARIÁVEIS ── */}

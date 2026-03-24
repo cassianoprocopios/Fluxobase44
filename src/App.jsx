@@ -8,6 +8,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { ConciliationProvider } from '@/lib/ConciliationContext';
 
 import AppLayout from '@/components/layout/AppLayout';
+import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import Dashboard from '@/pages/Dashboard';
 import Lancamentos from '@/pages/Lancamentos';
 import DRE from '@/pages/DRE';

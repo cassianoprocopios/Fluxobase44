@@ -390,6 +390,25 @@ export default function DRE() {
         </div>
       </div>
 
+      {/* Análise IA */}
+      <AIFinancialAnalysis
+        label="DRE Gerencial"
+        context={`Ano: ${selectedYear}. Unidade: ${selectedUnit === "all" ? "Todas" : selectedUnit}. Mês filtrado: ${selectedMonth === "all" ? "Ano completo" : MONTHS_PT[parseInt(selectedMonth)]}.`}
+        data={{
+          totalReceitas: dreData.totalEntradas,
+          totalCustosVariaveis: dreData.totalVariaveis,
+          margemContribuicao: dreData.margemContribuicao,
+          margemContribuicaoPct: dreData.margemContribuicaoPct,
+          totalGastosFixos: dreData.totalFixos,
+          lucroLiquido: dreData.resultado,
+          margemLiquida: dreData.margemLiquida,
+          gruposReceita: dreData.entryRows.map((r) => ({ nome: r.label, mensal: r.monthly, total: r.monthly.reduce((s, v) => s + v, 0) })),
+          gruposCustosVariaveis: dreData.variableRows.map((r) => ({ nome: r.label, mensal: r.monthly, total: r.monthly.reduce((s, v) => s + v, 0) })),
+          gruposGastosFixos: dreData.fixedRows.map((r) => ({ nome: r.label, mensal: r.monthly, total: r.monthly.reduce((s, v) => s + v, 0) })),
+          meses: MONTHS_PT,
+        }}
+      />
+
       {/* Tabela DRE */}
       <Card>
         <CardContent className="p-0">

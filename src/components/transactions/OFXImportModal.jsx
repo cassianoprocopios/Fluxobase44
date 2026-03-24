@@ -78,12 +78,13 @@ export default function OFXImportModal({ open, onOpenChange }) {
   const enrichWithCategories = (rawTxns, activeRules) => {
     return rawTxns.map((t) => {
       const ruleMatch = applyCategorizationRules(t, activeRules);
-      const suggested = ruleMatch?.category || (t.type === "entrada" ? "Outras Receitas" : "Outras Despesas");
+      // Prioridade: regra de categorização > categoria vinda do CSV > fallback
+      const suggested = ruleMatch?.category || t.category || (t.type === "entrada" ? "Outras Receitas" : "Outras Despesas");
       return {
         ...t,
         suggestedCategory: suggested,
         editedCategory: suggested,
-        autoMatched: !!ruleMatch?.category,
+        autoMatched: !!ruleMatch?.category || !!t.category,
       };
     });
   };

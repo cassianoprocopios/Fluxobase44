@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants";
-import { TrendingUp, TrendingDown, Droplets } from "lucide-react";
+import { TrendingUp, TrendingDown, Droplets, ChevronRight, ChevronDown, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import {
   AreaChart,
   Area,

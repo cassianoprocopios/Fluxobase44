@@ -1,6 +1,8 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
+import { hasRouteAccess } from "@/lib/permissions";
 import {
   LayoutDashboard,
   ArrowUpDown,
@@ -27,6 +29,9 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ collapsed, setCollapsed }) {
   const location = useLocation();
+  const { user } = useAuth();
+  const role = user?.role || "colaborador";
+  const visibleItems = NAV_ITEMS.filter((item) => hasRouteAccess(role, item.path));
 
   return (
     <aside

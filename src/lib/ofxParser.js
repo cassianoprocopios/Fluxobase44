@@ -102,8 +102,68 @@ function parseOFXDate(raw) {
   return `${y}-${m}-${d}`;
 }
 
+export function parseBradesco(content) {
+  const lines = content.split(/\r?\n/);
+  const transactions = [];
+
+  // Pula cabeçalho até encontrar a linha com "Data"
+  let startIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].includes("Data") && lines[i].includes("Lançamento")) {
+      startIdx = i + 1;
+      break;
+    }
+  }
+
+  if (startIdx === -1) return [];
+
+  for (let i = startIdx; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+
+    // Linha com data no início (YYYY-MM-DD ou DD/MM/YYYY formato)
+    const dateMatch = line.match(/^\s*(\d{1,2}\/\d{1,2}\/\d{4})/);
+    if (!dateMatch) continue;
+
+    const rawDate = dateMatch[1];
+    const date = parseFlexDate(rawDate);
+    if (!date) continue;
+
+    // Extrai descrição, crédito e débito por posição aproximada
+    let description = "";
+    let creditStr = "";
+    let debitStr = "";
+
+    const parts = line.split(/\s{2,}/); // split por 2+ espaços
+    if (parts.length >= 2) {
+      description = parts[1].trim();
+      if (parts.length >= 3) creditStr = parts[2].trim();
+      if (parts.length >= 4) debitStr = parts[3].trim();
+    }
+
+    // Limpa valores
+    const cleanValue = (str) => str.replace(/[R$\s.]/g, "").replace(",", ".");
+    const credit = creditStr ? parseFloat(cleanValue(creditStr)) : 0;
+    const debit = debitStr ? parseFloat(cleanValue(debitStr)) : 0;
+
+    const amount = credit || debit;
+    if (isNaN(amount) || amount === 0) continue;
+
+    transactions.push({
+      id: `bradesco-${i}-${Date.now()}`,
+      date,
+      amount: Math.abs(amount),
+      type: credit > 0 ? "entrada" : "saida",
+      description: description || "",
+      raw: line,
+    });
+  }
+
+  return transactions;
+}
+
 export function parseCSV(content) {
-  const lines = content.split(/\r?\n/).filter((l) => l.trim());
+   const lines = content.split(/\r?\n/).filter((l) => l.trim());
   if (lines.length < 2) return [];
 
   // Detecta separador

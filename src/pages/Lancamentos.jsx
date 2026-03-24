@@ -233,6 +233,8 @@ export default function Lancamentos() {
         filters={filters}
         setFilters={setFilters}
         categories={categories}
+        costCenters={costCenters}
+        bankAccounts={bankAccounts}
       />
 
       <TransactionTable

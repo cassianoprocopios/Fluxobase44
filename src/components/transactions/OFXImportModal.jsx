@@ -179,11 +179,6 @@ export default function OFXImportModal({ open, onOpenChange }) {
     toast.success(`Categoria "${cat}" aplicada a todos os ${type === "entrada" ? "entradas" : "saídas"} incluídos.`);
   };
 
-  // Assign stable import IDs once
-  const txWithIds = useMemo(() => {
-    return transactions.map((t, i) => t._importId !== undefined ? t : { ...t, _importId: i });
-  }, []); // intentionally static — we manage via setTransactions below
-
   const groups = useMemo(() => {
     const map = new Map();
     for (const t of transactions) {

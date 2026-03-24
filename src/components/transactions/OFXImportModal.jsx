@@ -18,22 +18,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, CheckCircle2, AlertCircle, FileText, Sparkles, ChevronDown } from "lucide-react";
+import { Upload, CheckCircle2, AlertCircle, FileText, Sparkles, Check, Clock, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/constants";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+// Status de cada item:
+// "pending"  = sem categoria (usuário ainda não classificou)
+// "suggested" = automação sugeriu, aguardando aprovação do usuário
+// "approved" = usuário aprovou/escolheu a categoria manualmente
 
 export default function OFXImportModal({ open, onOpenChange }) {
   const inputRef = useRef();
   const queryClient = useQueryClient();
   const [step, setStep] = useState("upload");
-  const [transactions, setTransactions] = useState([]); // enriched with suggestedCategory, editedCategory
-  const [selected, setSelected] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedCount, setSavedCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
   const [importUnit, setImportUnit] = useState("");
   const [importBank, setImportBank] = useState("");
 
@@ -60,12 +68,12 @@ export default function OFXImportModal({ open, onOpenChange }) {
   const reset = () => {
     setStep("upload");
     setTransactions([]);
-    setSelected([]);
     setFileName("");
     setError("");
     setLoading(false);
     setSaving(false);
     setSavedCount(0);
+    setPendingCount(0);
     setImportUnit("");
     setImportBank("");
   };
@@ -78,14 +86,25 @@ export default function OFXImportModal({ open, onOpenChange }) {
   const enrichWithCategories = (rawTxns, activeRules) => {
     return rawTxns.map((t) => {
       const ruleMatch = applyCategorizationRules(t, activeRules);
-      // Prioridade: regra de categorização > categoria vinda do CSV > fallback
-      const suggested = ruleMatch?.category || t.category || (t.type === "entrada" ? "Outras Receitas" : "Outras Despesas");
-      return {
-        ...t,
-        suggestedCategory: suggested,
-        editedCategory: suggested,
-        autoMatched: !!ruleMatch?.category || !!t.category,
-      };
+      const csvCategory = t.category; // categoria vinda do CSV
+
+      if (ruleMatch?.category || csvCategory) {
+        // Sugestão automática — requer aprovação
+        return {
+          ...t,
+          category: ruleMatch?.category || csvCategory,
+          reviewStatus: "suggested", // aguardando aprovação
+          autoSource: ruleMatch?.category ? "regra" : "csv",
+        };
+      } else {
+        // Sem sugestão — fica pendente
+        return {
+          ...t,
+          category: "",
+          reviewStatus: "pending",
+          autoSource: null,
+        };
+      }
     });
   };
 
@@ -111,69 +130,91 @@ export default function OFXImportModal({ open, onOpenChange }) {
       }
       const enriched = enrichWithCategories(rawTxns, rules);
       setTransactions(enriched);
-      setSelected(enriched.map((_, i) => i));
       setFileName(file.name);
       setLoading(false);
-      setStep("preview");
+      setStep("review");
     };
     reader.onerror = () => { setError("Erro ao ler o arquivo."); setLoading(false); };
     reader.readAsText(file, "latin1");
   };
 
-  const toggleAll = () => {
-    setSelected(selected.length === transactions.length ? [] : transactions.map((_, i) => i));
+  // Aprovar categoria sugerida
+  const approveItem = (i) => {
+    setTransactions((prev) =>
+      prev.map((t, idx) => idx === i ? { ...t, reviewStatus: "approved" } : t)
+    );
   };
 
-  const toggleOne = (i) => {
-    setSelected((prev) => prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]);
-  };
-
+  // Alterar categoria (aprovação manual)
   const updateCategory = (i, cat) => {
-    setTransactions((prev) => prev.map((t, idx) => idx === i ? { ...t, editedCategory: cat } : t));
+    setTransactions((prev) =>
+      prev.map((t, idx) =>
+        idx === i ? { ...t, category: cat, reviewStatus: cat ? "approved" : "pending" } : t
+      )
+    );
   };
 
-  const handleImport = async () => {
-    if (!importUnit) { toast.error("Selecione a Unidade antes de importar."); return; }
-    if (!importBank) { toast.error("Selecione o Banco/Conta antes de importar."); return; }
-    setSaving(true);
-    const toCreate = transactions
-      .filter((_, i) => selected.includes(i))
-      .map((t) => ({
-        date: t.date,
-        type: t.type,
-        amount: t.amount,
-        description: t.description || "",
-        category: t.editedCategory || (t.type === "entrada" ? "Outras Receitas" : "Outras Despesas"),
-        payment_method: "outro",
-        cost_center: importUnit,
-        bank_account: importBank,
-      }));
-    await base44.entities.Transaction.bulkCreate(toCreate);
-    queryClient.invalidateQueries({ queryKey: ["transactions"] });
-    setSavedCount(toCreate.length);
-    setSaving(false);
-    setStep("done");
-    toast.success(`${toCreate.length} lançamentos importados!`);
+  // Aprovar todos que têm sugestão
+  const approveAllSuggested = () => {
+    setTransactions((prev) =>
+      prev.map((t) => t.reviewStatus === "suggested" ? { ...t, reviewStatus: "approved" } : t)
+    );
   };
 
-  const autoMatchedCount = useMemo(() => transactions.filter((t) => t.autoMatched).length, [transactions]);
+  const stats = useMemo(() => ({
+    approved: transactions.filter((t) => t.reviewStatus === "approved").length,
+    suggested: transactions.filter((t) => t.reviewStatus === "suggested").length,
+    pending: transactions.filter((t) => t.reviewStatus === "pending").length,
+  }), [transactions]);
 
   const categoryOptions = useMemo(() => {
     const cats = categories.map((c) => c.name);
     return [...new Set(cats)].sort();
   }, [categories]);
 
+  const handleImport = async () => {
+    if (!importUnit) { toast.error("Selecione a Unidade antes de importar."); return; }
+    if (!importBank) { toast.error("Selecione o Banco/Conta antes de importar."); return; }
+
+    const toCreate = transactions.filter((t) => t.reviewStatus === "approved");
+    const pending = transactions.filter((t) => t.reviewStatus !== "approved");
+
+    if (toCreate.length === 0) {
+      toast.error("Nenhum lançamento aprovado para importar. Revise as categorias.");
+      return;
+    }
+
+    setSaving(true);
+    await base44.entities.Transaction.bulkCreate(
+      toCreate.map((t) => ({
+        date: t.date,
+        type: t.type,
+        amount: t.amount,
+        description: t.description || "",
+        category: t.category,
+        payment_method: "outro",
+        cost_center: importUnit,
+        bank_account: importBank,
+      }))
+    );
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    setSavedCount(toCreate.length);
+    setPendingCount(pending.length);
+    setSaving(false);
+    setStep("done");
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[88vh] flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Importar OFX / CSV</DialogTitle>
           <DialogDescription>
-            Importe transações do extrato bancário. As categorias são sugeridas automaticamente pelas suas regras.
+            Todos os lançamentos precisam ser revisados e aprovados antes de entrar no sistema.
           </DialogDescription>
         </DialogHeader>
 
-        {/* UPLOAD STEP */}
+        {/* ── UPLOAD ── */}
         {step === "upload" && (
           <div className="flex-1 flex flex-col gap-4 py-2">
             <div className="grid grid-cols-2 gap-3">
@@ -227,9 +268,11 @@ export default function OFXImportModal({ open, onOpenChange }) {
                 </>
               )}
             </div>
-            <input ref={inputRef} type="file" accept=".ofx,.csv,.txt" className="hidden" disabled={!importUnit || !importBank} onChange={(e) => processFile(e.target.files[0])} />
+            <input ref={inputRef} type="file" accept=".ofx,.csv,.txt" className="hidden"
+              disabled={!importUnit || !importBank}
+              onChange={(e) => processFile(e.target.files[0])} />
 
-            {/* Exemplo de formato */}
+            {/* CSV format hint */}
             <div className="border border-border rounded-xl p-4 bg-muted/20 text-xs space-y-2">
               <p className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Exemplo de CSV aceito</p>
               <div className="overflow-x-auto">
@@ -247,21 +290,15 @@ export default function OFXImportModal({ open, onOpenChange }) {
                       ["05/01/2026", "3.500,00", "Pagamento cliente", "Receita Serviços"],
                       ["10/01/2026", "-89,90", "Internet", ""],
                     ].map((row, i) => (
-                      <tr key={i} className="hover:bg-muted/30">
+                      <tr key={i}>
                         {row.map((cell, j) => (
-                          <td key={j} className="px-2 py-1 text-foreground/80 font-mono">{cell || <span className="text-muted-foreground italic">vazio</span>}</td>
+                          <td key={j} className="px-2 py-1 font-mono">{cell || <span className="text-muted-foreground italic">vazio</span>}</td>
                         ))}
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <ul className="text-muted-foreground space-y-0.5 mt-1">
-                <li>• Separador: <span className="font-mono font-semibold">,</span> ou <span className="font-mono font-semibold">;</span></li>
-                <li>• Data: <span className="font-mono">DD/MM/AAAA</span> ou <span className="font-mono">AAAA-MM-DD</span></li>
-                <li>• Valor negativo = Saída · Valor positivo = Entrada</li>
-                <li>• Coluna <span className="font-mono">Categoria</span> é usada automaticamente se presente</li>
-              </ul>
             </div>
 
             {error && (
@@ -272,107 +309,171 @@ export default function OFXImportModal({ open, onOpenChange }) {
           </div>
         )}
 
-        {/* PREVIEW STEP */}
-        {step === "preview" && (
+        {/* ── REVIEW ── */}
+        {step === "review" && (
           <div className="flex-1 flex flex-col overflow-hidden gap-3">
-            {/* Header summary */}
-            <div className="flex items-center justify-between text-sm flex-wrap gap-2">
-              <span className="text-muted-foreground">{fileName} · {transactions.length} transações</span>
-              <div className="flex items-center gap-3">
-                {autoMatchedCount > 0 && (
-                  <span className="flex items-center gap-1.5 text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">
-                    <Sparkles className="w-3 h-3" />
-                    {autoMatchedCount} categorizadas automaticamente
+            {/* Status bar */}
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="text-muted-foreground font-medium">{fileName} · {transactions.length} transações</span>
+              <div className="flex items-center gap-2 ml-auto flex-wrap">
+                {stats.approved > 0 && (
+                  <span className="flex items-center gap-1 bg-success/10 text-success px-2.5 py-1 rounded-full font-medium">
+                    <Check className="w-3 h-3" /> {stats.approved} aprovados
                   </span>
                 )}
-                <button onClick={toggleAll} className="text-primary hover:underline text-xs font-medium">
-                  {selected.length === transactions.length ? "Desmarcar todos" : "Selecionar todos"}
-                </button>
+                {stats.suggested > 0 && (
+                  <span className="flex items-center gap-1 bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">
+                    <Sparkles className="w-3 h-3" /> {stats.suggested} aguardando aprovação
+                  </span>
+                )}
+                {stats.pending > 0 && (
+                  <span className="flex items-center gap-1 bg-amber-500/10 text-amber-600 px-2.5 py-1 rounded-full font-medium">
+                    <Clock className="w-3 h-3" /> {stats.pending} sem categoria
+                  </span>
+                )}
               </div>
             </div>
 
+            {/* Approve all suggested */}
+            {stats.suggested > 0 && (
+              <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+                <span className="text-xs text-primary font-medium flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {stats.suggested} lançamento(s) com categoria sugerida automaticamente — revise e aprove
+                </span>
+                <Button size="sm" variant="outline" className="h-7 text-xs border-primary/30 text-primary hover:bg-primary/10" onClick={approveAllSuggested}>
+                  Aprovar todos
+                </Button>
+              </div>
+            )}
+
             {/* List */}
-            <div className="overflow-y-auto flex-1 border border-border rounded-xl divide-y divide-border">
-              {transactions.map((t, i) => (
-                <div
-                  key={t.id}
-                  className={`flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted/30 ${selected.includes(i) ? "" : "opacity-50"}`}
-                >
-                  {/* Checkbox */}
-                  <input
-                    type="checkbox"
-                    readOnly
-                    checked={selected.includes(i)}
-                    onClick={() => toggleOne(i)}
-                    className="w-4 h-4 shrink-0 accent-primary cursor-pointer"
-                  />
+            <div className="overflow-y-auto flex-1 border border-border rounded-xl divide-y divide-border min-h-0">
+              {transactions.map((t, i) => {
+                const isPending = t.reviewStatus === "pending";
+                const isSuggested = t.reviewStatus === "suggested";
+                const isApproved = t.reviewStatus === "approved";
 
-                  {/* Date */}
-                  <span className="text-xs text-muted-foreground w-20 shrink-0">{t.date}</span>
+                return (
+                  <div
+                    key={t.id || i}
+                    className={`flex items-center gap-2.5 px-3 py-2.5 transition-colors ${
+                      isPending ? "bg-amber-50/50 dark:bg-amber-900/10" :
+                      isSuggested ? "bg-primary/3" : ""
+                    }`}
+                  >
+                    {/* Status icon */}
+                    <div className="shrink-0 w-6 flex justify-center">
+                      {isApproved && <Check className="w-4 h-4 text-success" />}
+                      {isSuggested && <Sparkles className="w-4 h-4 text-primary" />}
+                      {isPending && <Clock className="w-4 h-4 text-amber-500" />}
+                    </div>
 
-                  {/* Type badge */}
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
-                    t.type === "entrada" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-                  }`}>
-                    {t.type === "entrada" ? "Entrada" : "Saída"}
-                  </span>
+                    {/* Date */}
+                    <span className="text-xs text-muted-foreground w-16 shrink-0">
+                      {t.date ? format(new Date(t.date.substring(0, 10)), "dd/MM/yy", { locale: ptBR }) : t.date}
+                    </span>
 
-                  {/* Description */}
-                  <span className="text-sm flex-1 truncate min-w-0">{t.description || "Sem descrição"}</span>
+                    {/* Type */}
+                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0 ${
+                      t.type === "entrada" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                    }`}>
+                      {t.type === "entrada" ? "E" : "S"}
+                    </span>
 
-                  {/* Category selector */}
-                  <div className="shrink-0 w-44" onClick={(e) => e.stopPropagation()}>
-                    <Select value={t.editedCategory} onValueChange={(v) => updateCategory(i, v)}>
-                      <SelectTrigger className={`h-7 text-xs ${t.autoMatched ? "border-primary/50 bg-primary/5" : ""}`}>
-                        <div className="flex items-center gap-1 overflow-hidden">
-                          {t.autoMatched && <Sparkles className="w-3 h-3 text-primary shrink-0" />}
-                          <SelectValue />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categoryOptions.map((cat) => (
-                          <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {/* Description */}
+                    <span className="text-sm flex-1 truncate min-w-0">{t.description || "Sem descrição"}</span>
+
+                    {/* Category selector */}
+                    <div className="shrink-0 w-44" onClick={(e) => e.stopPropagation()}>
+                      <Select value={t.category || ""} onValueChange={(v) => updateCategory(i, v)}>
+                        <SelectTrigger className={`h-7 text-xs ${
+                          isPending ? "border-amber-400/70 bg-amber-50/50" :
+                          isSuggested ? "border-primary/50 bg-primary/5" :
+                          "border-success/50 bg-success/5"
+                        }`}>
+                          <SelectValue placeholder="Selecionar categoria..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categoryOptions.map((cat) => (
+                            <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Approve button for suggested */}
+                    {isSuggested && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-xs border-success/50 text-success hover:bg-success/10 shrink-0"
+                        onClick={() => approveItem(i)}
+                      >
+                        <Check className="w-3 h-3 mr-1" />
+                        Ok
+                      </Button>
+                    )}
+                    {isApproved && !isSuggested && <div className="w-16 shrink-0" />}
+                    {isPending && <div className="w-16 shrink-0" />}
+
+                    {/* Amount */}
+                    <span className={`text-sm font-semibold shrink-0 w-24 text-right ${
+                      t.type === "entrada" ? "text-success" : "text-destructive"
+                    }`}>
+                      {t.type === "entrada" ? "+" : "-"}{formatCurrency(t.amount)}
+                    </span>
                   </div>
-
-                  {/* Amount */}
-                  <span className={`text-sm font-semibold shrink-0 w-28 text-right ${
-                    t.type === "entrada" ? "text-success" : "text-destructive"
-                  }`}>
-                    {t.type === "entrada" ? "+" : "-"}{formatCurrency(t.amount)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
+            {/* Footer note */}
             <p className="text-xs text-muted-foreground">
-              {selected.length} de {transactions.length} selecionados · Edite as categorias antes de importar.
+              {stats.approved} aprovado(s) serão importados.
+              {stats.pending > 0 && (
+                <span className="text-amber-600 font-medium"> · {stats.pending} sem categoria ficarão de fora — você pode classificá-los depois.</span>
+              )}
+              {stats.suggested > 0 && (
+                <span className="text-primary font-medium"> · {stats.suggested} aguardando sua aprovação.</span>
+              )}
             </p>
           </div>
         )}
 
-        {/* DONE STEP */}
+        {/* ── DONE ── */}
         {step === "done" && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8">
+          <div className="flex-1 flex flex-col items-center justify-center gap-5 py-8">
             <div className="w-16 h-16 rounded-full bg-success/15 flex items-center justify-center">
               <CheckCircle2 className="w-9 h-9 text-success" />
             </div>
-            <div className="text-center">
-              <p className="font-semibold text-success">{savedCount} lançamentos importados!</p>
-              <p className="text-sm text-muted-foreground mt-1">Os lançamentos já aparecem na lista de Lançamentos.</p>
+            <div className="text-center space-y-1">
+              <p className="font-semibold text-success text-lg">{savedCount} lançamento(s) importados!</p>
+              <p className="text-sm text-muted-foreground">Os lançamentos já aparecem na lista de Lançamentos.</p>
             </div>
+            {pendingCount > 0 && (
+              <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3 max-w-sm">
+                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                    {pendingCount} lançamento(s) sem categoria
+                  </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+                    Lembre-se de classificá-los dentro do mês atual usando a função <strong>Classificar</strong> na página de Lançamentos.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         <DialogFooter className="pt-2">
           {step === "upload" && <Button variant="outline" onClick={handleClose}>Cancelar</Button>}
-          {step === "preview" && (
+          {step === "review" && (
             <>
               <Button variant="outline" onClick={reset}>Voltar</Button>
-              <Button onClick={handleImport} disabled={selected.length === 0 || saving}>
-                {saving ? "Importando…" : `Importar ${selected.length} lançamentos`}
+              <Button onClick={handleImport} disabled={saving || stats.approved === 0}>
+                {saving ? "Importando…" : `Importar ${stats.approved} aprovados${stats.pending > 0 ? ` (${stats.pending} pendentes)` : ""}`}
               </Button>
             </>
           )}

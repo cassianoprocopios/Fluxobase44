@@ -53,7 +53,7 @@ export default function MobileNav() {
       {open && (
         <div className="fixed inset-0 z-40 pt-16 bg-sidebar">
           <nav className="p-4 space-y-1">
-            {NAV_ITEMS.map((item) => {
+            {visibleItems.map((item) => {
               const isActive =
                 item.path === "/"
                   ? location.pathname === "/"

@@ -186,6 +186,28 @@ export default function FluxoCaixa() {
         </div>
       </div>
 
+      {/* Análise IA */}
+      <AIFinancialAnalysis
+        label="Fluxo de Caixa"
+        context={`Ano: ${selectedYear}. Unidade: ${selectedUnit === "all" ? "Todas" : selectedUnit}. Mês filtrado: ${selectedMonth === "all" ? "Ano completo" : MONTHS_PT[parseInt(selectedMonth)]}.`}
+        data={{
+          resumoMensal: filteredData.map((r) => ({
+            mes: r.month,
+            entradas: r.entradas,
+            saidas: r.saidas,
+            saldo: r.saldo,
+            geracaoCaixa: r.geracaoCaixa,
+            acumulado: r.acumulado,
+          })),
+          totalEntradas,
+          totalSaidas,
+          totalGeracaoCaixa: totalGeracao,
+          mesesPositivos,
+          mesesNegativos,
+          saldoFinalAcumulado: filteredData[filteredData.length - 1]?.acumulado || 0,
+        }}
+      />
+
       {/* KPI Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4">

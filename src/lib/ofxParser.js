@@ -109,14 +109,20 @@ export function parseCSV(content) {
   // Detecta separador
   const sep = lines[0].includes(";") ? ";" : ",";
 
-  const headers = lines[0].split(sep).map((h) => h.trim().toLowerCase().replace(/['"]/g, ""));
+  // Normaliza cabeçalho: remove BOM, aspas, acentos e converte para minúsculo
+  const normalizeHeader = (h) =>
+    h.trim().replace(/['"]/g, "").toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // remove acentos
+
+  const headers = lines[0].split(sep).map(normalizeHeader);
 
   // Mapeamento flexível de colunas
   const colMap = {
-    date: findCol(headers, ["data", "date", "dt", "data lançamento", "data lancamento"]),
+    date: findCol(headers, ["data", "date", "dt", "data lancamento"]),
     amount: findCol(headers, ["valor", "amount", "value", "vlr", "montante"]),
-    description: findCol(headers, ["descrição", "descricao", "description", "histórico", "historico", "memo", "obs", "lançamento", "lancamento"]),
+    description: findCol(headers, ["descricao", "description", "historico", "memo", "obs", "lancamento", "titulo", "title"]),
     type: findCol(headers, ["tipo", "type", "natureza", "dc"]),
+    category: findCol(headers, ["categoria", "category", "plano"]),
   };
 
   const transactions = [];
@@ -127,12 +133,14 @@ export function parseCSV(content) {
 
     const rawDate = cells[colMap.date] ?? "";
     const rawAmount = cells[colMap.amount] ?? "";
-    const rawDesc = cells[colMap.description] ?? "";
-    const rawType = cells[colMap.type] ?? "";
+    const rawDesc = colMap.description !== -1 ? (cells[colMap.description] ?? "") : "";
+    const rawType = colMap.type !== -1 ? (cells[colMap.type] ?? "") : "";
+    const rawCategory = colMap.category !== -1 ? (cells[colMap.category] ?? "") : "";
 
     const date = parseFlexDate(rawDate.trim().replace(/['"]/g, ""));
     if (!date) continue;
 
+    // Limpa valor: remove R$, espaços, aspas; trata ponto como milhar e vírgula como decimal
     const cleanAmount = rawAmount.replace(/['"R$\s]/g, "").replace(/\./g, "").replace(",", ".");
     const amount = parseFloat(cleanAmount);
     if (isNaN(amount)) continue;
@@ -146,12 +154,16 @@ export function parseCSV(content) {
       type = amount >= 0 ? "entrada" : "saida";
     }
 
+    const description = rawDesc.replace(/['"]/g, "").trim();
+    const category = rawCategory.replace(/['"]/g, "").trim();
+
     transactions.push({
       id: `csv-${i}-${Date.now()}`,
       date,
       amount: Math.abs(amount),
       type,
-      description: rawDesc.replace(/['"]/g, "").trim(),
+      description: description || category || "",
+      category: category || null,
       raw: lines[i],
     });
   }

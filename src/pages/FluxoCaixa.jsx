@@ -44,6 +44,15 @@ export default function FluxoCaixa() {
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedUnit, setSelectedUnit] = useState("all");
+  const [expandedMonths, setExpandedMonths] = useState(new Set());
+
+  const toggleMonth = (month) => {
+    setExpandedMonths((prev) => {
+      const next = new Set(prev);
+      next.has(month) ? next.delete(month) : next.add(month);
+      return next;
+    });
+  };
 
   const { data: rawTransactions = [], isLoading } = useQuery({
     queryKey: ["transactions"],

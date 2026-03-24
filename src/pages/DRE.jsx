@@ -118,6 +118,10 @@ export default function DRE() {
         monthly: getMonthlyTotals((t) => t.type === "saida" && cats.includes(t.category)),
         isGroup: true,
         isVariable: CUSTOS_VARIAVEIS_GROUPS.includes(group),
+        subRows: [...new Set(cats)].map((cat) => ({
+          label: cat,
+          monthly: getMonthlyTotals((t) => t.type === "saida" && t.category === cat),
+        })).filter((sr) => sr.monthly.some((v) => v > 0)),
       }));
 
     const groupedExitCats = Object.values(exitGroups).flat();
@@ -125,7 +129,7 @@ export default function DRE() {
       (t) => t.type === "saida" && !groupedExitCats.includes(t.category)
     );
     if (ungroupedExits.some((v) => v > 0)) {
-      allExitRows.push({ label: "Outras Despesas", monthly: ungroupedExits, isGroup: true, isVariable: true });
+      allExitRows.push({ label: "Outras Despesas", monthly: ungroupedExits, isGroup: true, isVariable: true, subRows: [] });
     }
 
     // Variáveis (para margem de contribuição)

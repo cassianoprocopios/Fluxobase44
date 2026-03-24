@@ -463,6 +463,18 @@ export default function DRE() {
                 ))}
                 <DRERow label="TOTAL GASTOS FIXOS" monthly={dreData.totalFixos} bold highlight negative />
 
+                {/* ── EBITDA ── */}
+                <ResultRow
+                  label="EBITDA (Lucro antes de Juros, Impostos, Depr. e Amort.)"
+                  monthly={dreData.margemContribuicao.map((v, i) => v - dreData.totalFixos[i])}
+                  pctMonthly={dreData.totalEntradas.map((v, i) => {
+                    const ebitda = dreData.margemContribuicao[i] - dreData.totalFixos[i];
+                    return v > 0 ? (ebitda / v) * 100 : 0;
+                  })}
+                  colorFn={(v) => (v < 0 ? "text-destructive" : "text-primary")}
+                  showPct
+                />
+
                 {/* ── LUCRO LÍQUIDO ── */}
                 <ResultRow
                   label="LUCRO LÍQUIDO"

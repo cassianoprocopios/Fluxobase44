@@ -1,5 +1,5 @@
 import React, { useRef, useState, useMemo } from "react";
-import { parseOFX, parseCSV, applyCategorizationRules } from "@/lib/ofxParser";
+import { parseOFX, parseCSV, parseBradesco, applyCategorizationRules } from "@/lib/ofxParser";
 import { base44 } from "@/api/base44Client";
 import {
   Dialog,

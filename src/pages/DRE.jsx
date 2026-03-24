@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronRight, ChevronDown } from "lucide-react";
 import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants";
 
 // Grupos de custos variáveis / diretos para cálculo da margem de contribuição

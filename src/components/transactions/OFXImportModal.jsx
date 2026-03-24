@@ -523,22 +523,13 @@ export default function OFXImportModal({ open, onOpenChange }) {
               <CheckCircle2 className="w-9 h-9 text-success" />
             </div>
             <div className="text-center space-y-1">
-              <p className="font-semibold text-success text-lg">{savedCount} lançamento(s) importados!</p>
-              <p className="text-sm text-muted-foreground">Os lançamentos já aparecem na lista de Lançamentos.</p>
+              <p className="font-semibold text-success text-lg">{savedCount + pendingCount} lançamento(s) importados!</p>
+              <p className="text-sm text-muted-foreground">
+                {savedCount > 0 && `${savedCount} classificado(s)`}
+                {savedCount > 0 && pendingCount > 0 && " · "}
+                {pendingCount > 0 && `${pendingCount} sem categoria (classifique na página de Lançamentos)`}
+              </p>
             </div>
-            {pendingCount > 0 && (
-              <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3 max-w-sm">
-                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-                    {pendingCount} lançamento(s) sem categoria
-                  </p>
-                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
-                    Lembre-se de classificá-los dentro do mês atual usando a função <strong>Classificar</strong> na página de Lançamentos.
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         )}
 

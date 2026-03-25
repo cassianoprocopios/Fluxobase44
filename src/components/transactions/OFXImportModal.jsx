@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useEffect } from "react";
 import { parseOFX, parseCSV, parseBradesco, applyCategorizationRules } from "@/lib/ofxParser";
 import { base44 } from "@/api/base44Client";
 import {
@@ -25,6 +25,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+const DRAFT_KEY = "ofx_import_draft";
+
 export default function OFXImportModal({ open, onOpenChange }) {
   const inputRef = useRef();
   const queryClient = useQueryClient();
@@ -38,6 +40,15 @@ export default function OFXImportModal({ open, onOpenChange }) {
   const [pendingCount, setPendingCount] = useState(0);
   const [importUnit, setImportUnit] = useState("");
   const [importBank, setImportBank] = useState("");
+  const [hasDraft, setHasDraft] = useState(false);
+
+  // Verifica se há rascunho salvo ao abrir
+  useEffect(() => {
+    if (open) {
+      const draft = localStorage.getItem(DRAFT_KEY);
+      setHasDraft(!!draft);
+    }
+  }, [open]);
 
   const { data: costCenters = [] } = useQuery({
     queryKey: ["costCenters"],
@@ -59,7 +70,33 @@ export default function OFXImportModal({ open, onOpenChange }) {
     queryFn: () => base44.entities.CategorizationRule.list(),
   });
 
+  const saveDraft = (txns, unit, bank, name) => {
+    const draft = { transactions: txns, importUnit: unit, importBank: bank, fileName: name, savedAt: new Date().toISOString() };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    setHasDraft(true);
+  };
+
+  const loadDraft = () => {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    const draft = JSON.parse(raw);
+    const savedAt = draft.savedAt ? new Date(draft.savedAt).toLocaleDateString("pt-BR") : "";
+    setTransactions(draft.transactions || []);
+    setImportUnit(draft.importUnit || "");
+    setImportBank(draft.importBank || "");
+    setFileName(draft.fileName || (savedAt ? `Rascunho de ${savedAt}` : "Rascunho"));
+    setStep("review");
+    setHasDraft(true);
+    toast.success("Rascunho carregado!");
+  };
+
+  const clearDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setHasDraft(false);
+  };
+
   const reset = () => {
+    clearDraft();
     setStep("upload");
     setTransactions([]);
     setFileName("");
@@ -70,10 +107,27 @@ export default function OFXImportModal({ open, onOpenChange }) {
     setPendingCount(0);
     setImportUnit("");
     setImportBank("");
+    setHasDraft(false);
   };
 
   const handleClose = () => {
-    reset();
+    if (step === "review") {
+      // Salva rascunho sem limpar localStorage
+      saveDraft(transactions, importUnit, importBank, fileName);
+      toast.success("Progresso salvo! Você pode continuar depois.");
+      // Reseta estado local sem limpar o draft
+      setStep("upload");
+      setTransactions([]);
+      setFileName("");
+      setError("");
+      setSaving(false);
+      setSavedCount(0);
+      setPendingCount(0);
+      setImportUnit("");
+      setImportBank("");
+    } else {
+      reset();
+    }
     onOpenChange(false);
   };
 
@@ -115,6 +169,7 @@ export default function OFXImportModal({ open, onOpenChange }) {
       const enriched = enrichWithCategories(rawTxns, rules);
       setTransactions(enriched);
       setFileName(file.name);
+      saveDraft(enriched, importUnit, importBank, file.name);
       setLoading(false);
       setStep("review");
     };
@@ -126,31 +181,37 @@ export default function OFXImportModal({ open, onOpenChange }) {
   const [bulkCategory, setBulkCategory] = useState({ entrada: "", saida: "" });
 
   const updateCategory = (descKey, cat) => {
-    setTransactions((prev) =>
-      prev.map((t) =>
+    setTransactions((prev) => {
+      const updated = prev.map((t) =>
         (t.description || "Sem descrição").trim().toLowerCase() === descKey
           ? { ...t, category: cat, reviewStatus: cat ? "approved" : "pending" }
           : t
-      )
-    );
+      );
+      saveDraft(updated, importUnit, importBank, fileName);
+      return updated;
+    });
   };
 
   const toggleItemIncluded = (id) => {
-    setTransactions((prev) =>
-      prev.map((t) =>
+    setTransactions((prev) => {
+      const updated = prev.map((t) =>
         t._importId === id ? { ...t, excluded: !t.excluded } : t
-      )
-    );
+      );
+      saveDraft(updated, importUnit, importBank, fileName);
+      return updated;
+    });
   };
 
   const updateItemCategory = (id, cat) => {
-    setTransactions((prev) =>
-      prev.map((t) =>
+    setTransactions((prev) => {
+      const updated = prev.map((t) =>
         t._importId === id
           ? { ...t, category: cat, reviewStatus: cat ? "approved" : "pending" }
           : t
-      )
-    );
+      );
+      saveDraft(updated, importUnit, importBank, fileName);
+      return updated;
+    });
   };
 
   const toggleGroupIncluded = (descKey) => {
@@ -158,13 +219,15 @@ export default function OFXImportModal({ open, onOpenChange }) {
       (t) => (t.description || "Sem descrição").trim().toLowerCase() === descKey
     );
     const allExcluded = groupItems.every((t) => t.excluded);
-    setTransactions((prev) =>
-      prev.map((t) =>
+    setTransactions((prev) => {
+      const updated = prev.map((t) =>
         (t.description || "Sem descrição").trim().toLowerCase() === descKey
           ? { ...t, excluded: !allExcluded }
           : t
-      )
-    );
+      );
+      saveDraft(updated, importUnit, importBank, fileName);
+      return updated;
+    });
   };
 
   const toggleExpand = (key) => {
@@ -239,13 +302,14 @@ export default function OFXImportModal({ open, onOpenChange }) {
         type: t.type,
         amount: t.amount,
         description: t.description || "",
-        category: t.category || "", // Pode vir vazio para classificação posterior
+        category: t.category || "",
         payment_method: "outro",
         cost_center: importUnit,
         bank_account: importBank,
       }))
     );
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    clearDraft();
     setSavedCount(approved.length);
     setPendingCount(pending.length);
     setSaving(false);
@@ -347,6 +411,19 @@ export default function OFXImportModal({ open, onOpenChange }) {
                 </table>
               </div>
             </div>
+
+            {hasDraft && (
+              <div className="flex items-center justify-between gap-3 bg-primary/5 border border-primary/20 rounded-lg px-4 py-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                  <span>Há uma importação em andamento salva. Deseja continuar de onde parou?</span>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button size="sm" variant="outline" onClick={clearDraft}>Descartar</Button>
+                  <Button size="sm" onClick={loadDraft}>Continuar</Button>
+                </div>
+              </div>
+            )}
 
             {error && (
               <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">
@@ -511,8 +588,9 @@ export default function OFXImportModal({ open, onOpenChange }) {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              {stats.approved} classificado(s) · {stats.pending} sem categoria (serão importados para classificação posterior).
-              {stats.excluded > 0 && <span className="text-muted-foreground"> · {stats.excluded} excluídos manualmente.</span>}
+              {stats.approved} classificado(s) · {stats.pending} sem categoria (serão importados para classificar depois).
+              {stats.excluded > 0 && <span className="text-muted-foreground"> · {stats.excluded} excluídos.</span>}
+              {" "}<span className="text-primary font-medium">Progresso é salvo automaticamente.</span>
             </p>
           </div>
         )}
@@ -538,9 +616,14 @@ export default function OFXImportModal({ open, onOpenChange }) {
           {step === "upload" && <Button variant="outline" onClick={handleClose}>Cancelar</Button>}
           {step === "review" && (
             <>
-              <Button variant="outline" onClick={reset}>Voltar</Button>
-              <Button onClick={handleImport} disabled={saving || stats.approved === 0}>
-                {saving ? "Importando…" : `Importar ${stats.approved} aprovados${stats.pending > 0 ? ` (${stats.pending} pendentes)` : ""}`}
+              <Button variant="outline" onClick={handleClose}>
+                Salvar e Sair
+              </Button>
+              <Button variant="outline" onClick={reset}>Cancelar</Button>
+              <Button onClick={handleImport} disabled={saving || (stats.approved + stats.pending) === 0}>
+                {saving
+                  ? "Importando…"
+                  : `Importar ${stats.approved + stats.pending} lançamento(s)${stats.pending > 0 ? ` (${stats.pending} sem categoria)` : ""}`}
               </Button>
             </>
           )}

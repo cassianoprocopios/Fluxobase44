@@ -15,7 +15,7 @@ import { ptBR } from "date-fns/locale";
 
 
 export default function TransactionTable({ transactions, onEdit, onDelete, userRole }) {
-  const canEdit = userRole === "admin" || userRole === "gerente";
+  const canEdit = userRole === "admin" || userRole === "financeiro" || userRole === "gerente";
 
   return (
     <div className="rounded-lg border overflow-hidden">

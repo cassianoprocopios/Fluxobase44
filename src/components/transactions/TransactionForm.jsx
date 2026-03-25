@@ -46,6 +46,8 @@ export default function TransactionForm({
         ...transaction,
         amount: transaction.amount || "",
       });
+    } else {
+      setForm(EMPTY_FORM);
     }
   }, [transaction]);
 

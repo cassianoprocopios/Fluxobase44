@@ -21,6 +21,7 @@ import Conciliacao from '@/pages/Conciliacao';
 import RegrasCategorizacao from '@/pages/RegrasCategorizacao';
 import DashboardUnidades from '@/pages/DashboardUnidades';
 import Usuarios from '@/pages/Usuarios';
+import Auditoria from '@/pages/Auditoria';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -57,6 +58,7 @@ const AuthenticatedApp = () => {
         <Route path="/conciliacao" element={<ProtectedRoute><Conciliacao /></ProtectedRoute>} />
         <Route path="/regras-categorizacao" element={<ProtectedRoute><RegrasCategorizacao /></ProtectedRoute>} />
         <Route path="/usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
+        <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

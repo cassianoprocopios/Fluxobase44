@@ -16,6 +16,7 @@ import {
   DollarSign,
   Building2,
   Users,
+  ShieldAlert,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { path: "/dre", icon: FileBarChart, label: "DRE" },
   { path: "/fluxo-caixa", icon: TrendingUp, label: "Fluxo de Caixa" },
   { path: "/relatorios", icon: FileText, label: "Relatórios" },
+  { path: "/auditoria", icon: ShieldAlert, label: "Auditoria" },
   { path: "/usuarios", icon: Users, label: "Usuários" },
   { path: "/configuracoes", icon: Settings, label: "Configurações" },
 ];

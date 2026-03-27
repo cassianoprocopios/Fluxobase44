@@ -458,8 +458,8 @@ export default function OFXImportModal({ open, onOpenChange }) {
                       <SelectValue placeholder={`Categoria p/ todas as ${tipo === "entrada" ? "entradas" : "saídas"}...`} />
                     </SelectTrigger>
                     <SelectContent>
-                      {(categoryOptionsByType[tipo] || []).map((cat) => (
-                        <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
+                      {(categoryOptionsByType[tipo] || []).map((cat, i) => (
+                      <SelectItem key={`${cat}-${i}`} value={cat} className="text-xs">{cat}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -512,8 +512,8 @@ export default function OFXImportModal({ open, onOpenChange }) {
                               <SelectValue placeholder="Selecionar categoria..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {(categoryOptionsByType[g.type] || []).map((cat) => (
-                                <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
+                              {(categoryOptionsByType[g.type] || []).map((cat, i) => (
+                                <SelectItem key={`${cat}-${i}`} value={cat} className="text-xs">{cat}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>

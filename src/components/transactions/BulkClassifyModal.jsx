@@ -192,8 +192,8 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
                             <SelectValue placeholder="Selecionar categoria..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {(categoryOptionsByType[g.type] || []).map((cat) => (
-                              <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
+                            {(categoryOptionsByType[g.type] || []).map((cat, i) => (
+                              <SelectItem key={`${cat}-${i}`} value={cat} className="text-xs">{cat}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>

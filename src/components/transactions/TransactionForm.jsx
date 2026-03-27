@@ -132,8 +132,8 @@ export default function TransactionForm({
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>
-              {filteredCategories.map((c) => (
-                <SelectItem key={c.id || c.name} value={c.name}>
+              {filteredCategories.map((c, i) => (
+                <SelectItem key={`${c.id || c.name}-${i}`} value={c.name}>
                   {c.name}
                 </SelectItem>
               ))}

@@ -15,6 +15,7 @@ import MonthlyChart from "@/components/dashboard/MonthlyChart";
 import CashFlowMini from "@/components/dashboard/CashFlowMini";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";
 import CashFlowAnalysis from "@/components/dashboard/CashFlowAnalysis";
+import CashFlowProjection from "@/components/dashboard/CashFlowProjection";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Dashboard() {
@@ -245,6 +246,13 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <MonthlyChart data={monthlyData} />
         <CashFlowMini data={monthlyData} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <CashFlowProjection
+          transactions={transactions}
+          selectedYear={selectedYear}
+        />
       </div>
 
       <CashFlowAnalysis 

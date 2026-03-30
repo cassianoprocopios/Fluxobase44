@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 import {
   Search, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronRight,
-  CheckCircle2, Loader2, Clock,
+  CheckCircle2, Loader2, Clock, Square, CheckSquare,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/constants";
 import { format } from "date-fns";
@@ -21,6 +21,8 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
   const [expandedGroups, setExpandedGroups] = useState(new Set());
   // { groupKey: "saving" | "done" | null }
   const [groupStatus, setGroupStatus] = useState({});
+  // { transactionId: boolean } — itens desmarcados pelo usuário
+  const [deselected, setDeselected] = useState({});
 
   const unclassified = useMemo(
     () => transactions.filter((t) => !t.category || t.category.trim() === ""),
@@ -66,11 +68,20 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
     });
   };
 
-  // Aplica a categoria imediatamente ao selecionar — sem botão extra
+  const toggleDeselect = (id) => {
+    setDeselected((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Aplica a categoria imediatamente ao selecionar — apenas nos itens selecionados
   const handleSelectCategory = useCallback(async (group, cat) => {
     if (!cat || groupStatus[group.key] === "saving") return;
     setGroupStatus((prev) => ({ ...prev, [group.key]: "saving" }));
-    const ids = group.items.map((t) => t.id);
+    const ids = group.items.filter((t) => !deselected[t.id]).map((t) => t.id);
+    if (ids.length === 0) {
+      setGroupStatus((prev) => ({ ...prev, [group.key]: undefined }));
+      toast.error("Nenhum item selecionado no grupo.");
+      return;
+    }
     await onBulkUpdate(ids, cat);
     setGroupStatus((prev) => ({ ...prev, [group.key]: "done" }));
     toast.success(`"${group.label}" → ${cat}`, { duration: 2000 });
@@ -83,7 +94,7 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
         return prev;
       });
     }, 600);
-  }, [groupStatus, groups, onBulkUpdate, onOpenChange]);
+  }, [groupStatus, groups, deselected, onBulkUpdate, onOpenChange]);
 
   const doneCount = groups.filter((g) => groupStatus[g.key] === "done").length;
   const pendingGroups = filtered.filter((g) => groupStatus[g.key] !== "done");
@@ -175,7 +186,13 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{g.label}</p>
                         <p className="text-xs text-muted-foreground">
-                          {g.items.length} lançamento(s) ·{" "}
+                          {(() => {
+                            const selectedCount = g.items.filter((t) => !deselected[t.id]).length;
+                            return selectedCount < g.items.length
+                              ? <span className="text-amber-600 font-medium">{selectedCount} de {g.items.length} selecionados</span>
+                              : <span>{g.items.length} lançamento(s)</span>;
+                          })()}
+                          {" · "}
                           <span className={`font-semibold ${g.type === "entrada" ? "text-success" : "text-destructive"}`}>
                             {g.type === "saida" ? "-" : "+"}{formatCurrency(g.totalAmount)}
                           </span>
@@ -211,18 +228,34 @@ export default function BulkClassifyModal({ open, onOpenChange, transactions, ca
                     {/* Expanded items */}
                     {expanded && (
                       <div className="bg-muted/20 border-t border-border/50 divide-y divide-border/30">
-                        {g.items.map((t) => (
-                          <div key={t.id} className="flex items-center gap-3 pl-10 pr-4 py-1.5">
-                            <span className="text-xs text-muted-foreground w-16 shrink-0">
-                              {t.date ? format(new Date(t.date.substring(0, 10)), "dd/MM/yy", { locale: ptBR }) : "—"}
-                            </span>
-                            <span className="text-xs flex-1 truncate text-muted-foreground">{t.description || "—"}</span>
-                            <span className="text-xs text-muted-foreground hidden sm:block w-20 truncate">{t.bank_account || "—"}</span>
-                            <span className={`text-xs font-semibold shrink-0 ${t.type === "entrada" ? "text-success" : "text-destructive"}`}>
-                              {t.type === "entrada" ? "+" : "-"}{formatCurrency(t.amount)}
-                            </span>
-                          </div>
-                        ))}
+                        {g.items.map((t) => {
+                          const isOff = !!deselected[t.id];
+                          return (
+                            <div
+                              key={t.id}
+                              className={`flex items-center gap-3 pl-8 pr-4 py-1.5 transition-opacity ${isOff ? "opacity-40" : ""}`}
+                            >
+                              {/* Checkbox */}
+                              <button
+                                onClick={() => toggleDeselect(t.id)}
+                                className="shrink-0"
+                                title={isOff ? "Incluir nesta classificação" : "Excluir desta classificação"}
+                              >
+                                {isOff
+                                  ? <Square className="w-3.5 h-3.5 text-muted-foreground" />
+                                  : <CheckSquare className="w-3.5 h-3.5 text-primary" />}
+                              </button>
+                              <span className="text-xs text-muted-foreground w-16 shrink-0">
+                                {t.date ? format(new Date(t.date.substring(0, 10)), "dd/MM/yy", { locale: ptBR }) : "—"}
+                              </span>
+                              <span className="text-xs flex-1 truncate text-muted-foreground">{t.description || "—"}</span>
+                              <span className="text-xs text-muted-foreground hidden sm:block w-20 truncate">{t.bank_account || "—"}</span>
+                              <span className={`text-xs font-semibold shrink-0 ${t.type === "entrada" ? "text-success" : "text-destructive"}`}>
+                                {t.type === "entrada" ? "+" : "-"}{formatCurrency(t.amount)}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

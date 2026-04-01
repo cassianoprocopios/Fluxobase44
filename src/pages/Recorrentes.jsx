@@ -304,6 +304,10 @@ function RecurringCard({ item, canEdit, onEdit, onDelete, onToggle }) {
 
   const pm = PAYMENT_METHODS.find((p) => p.value === item.payment_method)?.label || item.payment_method || "—";
 
+  // Verifica se o mês atual já foi gerado
+  const currentYearMonth = new Date().toISOString().substring(0, 7); // "YYYY-MM"
+  const currentMonthGenerated = item.last_generated_month === currentYearMonth;
+
   return (
     <div
       className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
@@ -324,11 +328,22 @@ function RecurringCard({ item, canEdit, onEdit, onDelete, onToggle }) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <p className="text-sm font-semibold truncate">{item.name}</p>
           {!isActive && (
             <Badge variant="outline" className="text-xs py-0 px-1.5 text-muted-foreground">
               Pausada
+            </Badge>
+          )}
+          {isActive && currentMonthGenerated && (
+            <Badge className="text-xs py-0 px-1.5 bg-success/15 text-success border-success/30 border">
+              <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
+              Mês gerado
+            </Badge>
+          )}
+          {isActive && !currentMonthGenerated && item.last_generated_month && (
+            <Badge variant="outline" className="text-xs py-0 px-1.5 text-amber-600 border-amber-400/50">
+              Pendente geração
             </Badge>
           )}
         </div>

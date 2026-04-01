@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, FileText, PieChart as PieChartIcon } from "lucide-react";
+import { Download, FileText, PieChart as PieChartIcon, Building2 } from "lucide-react";
 import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants";
 import {
   PieChart,
@@ -40,6 +40,7 @@ export default function Relatorios() {
   );
   const [dateTo, setDateTo] = useState(new Date().toISOString().split("T")[0]);
   const [type, setType] = useState("todos");
+  const [selectedUnit, setSelectedUnit] = useState("all");
 
   const { data: rawTransactions = [] } = useQuery({
     queryKey: ["transactions"],
@@ -47,26 +48,52 @@ export default function Relatorios() {
   });
   const transactions = rawTransactions.map(normalizeTransaction);
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => base44.entities.Category.list(),
+  });
+
+  const { data: costCenters = [] } = useQuery({
+    queryKey: ["costCenters"],
+    queryFn: () => base44.entities.CostCenter.list("name"),
+  });
+
+  // Categorias Não DRE (transferências) — excluir dos relatórios
+  const naoDreCats = useMemo(
+    () => new Set(categories.filter((c) => c.dre_group === "Não DRE").map((c) => c.name)),
+    [categories]
+  );
+
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
       if (!t.date || t.status === "cancelado") return false;
       const dateStr = t.date.substring(0, 10);
       if (dateStr < dateFrom || dateStr > dateTo) return false;
       if (type !== "todos" && t.type !== type) return false;
+      if (selectedUnit !== "all" && t.cost_center !== selectedUnit) return false;
+      // Excluir transferências entre contas
+      if (naoDreCats.has(t.category)) return false;
       return true;
     });
-  }, [transactions, dateFrom, dateTo, type]);
+  }, [transactions, dateFrom, dateTo, type, selectedUnit, naoDreCats]);
 
+  // Breakdown separado por tipo (entradas e saídas não misturados)
   const categoryBreakdown = useMemo(() => {
-    const map = {};
+    const entradas = {};
+    const saidas = {};
     filtered.forEach((t) => {
       const cat = t.category || "Sem categoria";
-      map[cat] = (map[cat] || 0) + (t.amount || 0);
+      if (t.type === "entrada") entradas[cat] = (entradas[cat] || 0) + (t.amount || 0);
+      else saidas[cat] = (saidas[cat] || 0) + (t.amount || 0);
     });
+    // Retorna baseado no filtro de tipo
+    const map = type === "saida" ? saidas : type === "entrada" ? entradas : 
+      // "todos": usa saídas por padrão (mais relevante para análise de custos), mas se só há entradas usa entradas
+      Object.keys(saidas).length > 0 ? saidas : entradas;
     return Object.entries(map)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-  }, [filtered]);
+  }, [filtered, type]);
 
   const paymentBreakdown = useMemo(() => {
     const map = {};
@@ -87,15 +114,15 @@ export default function Relatorios() {
     .reduce((s, t) => s + (t.amount || 0), 0);
 
   const handleExportCSV = () => {
-    const headers = ["Data", "Tipo", "Categoria", "Descrição", "Valor", "Status", "Pagamento", "Unidade", "Banco"];
+    const headers = ["Data", "Tipo", "Categoria", "Descrição", "Valor", "Pagamento", "Unidade", "Banco"];
     const rows = filtered.map((t) => [
       t.date,
-      t.type,
-      t.category,
+      t.type === "entrada" ? "Entrada" : "Saída",
+      t.category || "",
       t.description || "",
-      t.amount,
-      t.status,
-      t.payment_method,
+      // Formato brasileiro: vírgula como decimal, sem separador de milhar — compatível com Excel BR
+      String(t.amount || 0).replace(".", ","),
+      t.payment_method || "",
       t.cost_center || "",
       t.bank_account || "",
     ]);
@@ -159,6 +186,20 @@ export default function Relatorios() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Unidade</Label>
+              <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as unidades</SelectItem>
+                  {costCenters.map((c) => (
+                    <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -207,7 +248,7 @@ export default function Relatorios() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <PieChartIcon className="w-4 h-4" />
-              Por Categoria
+              Por Categoria {type === "entrada" ? "(Entradas)" : type === "saida" ? "(Saídas)" : "(Saídas — mais relevante)"}
             </CardTitle>
           </CardHeader>
           <CardContent>

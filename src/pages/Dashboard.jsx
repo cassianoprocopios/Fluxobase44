@@ -17,6 +17,7 @@ import RecentTransactions from "@/components/dashboard/RecentTransactions";
 import CashFlowAnalysis from "@/components/dashboard/CashFlowAnalysis";
 import CashFlowProjection from "@/components/dashboard/CashFlowProjection";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import GoalAlert from "@/components/dashboard/GoalAlert";
 
 export default function Dashboard() {
   const { data: rawTransactions = [], isLoading } = useQuery({
@@ -30,6 +31,11 @@ export default function Dashboard() {
     queryFn: () => base44.entities.CostCenter.list("name"),
   });
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => base44.entities.Category.list(),
+  });
+
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
@@ -39,9 +45,18 @@ export default function Dashboard() {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedUnit, setSelectedUnit] = useState("all");
 
-  const transactions = selectedUnit === "all"
-    ? allTransactions
-    : allTransactions.filter((t) => t.cost_center === selectedUnit);
+  // Excluir transferências entre contas (Não DRE) de todos os cálculos do Dashboard
+  const naoDreCats = useMemo(
+    () => new Set(categories.filter((c) => c.dre_group === "Não DRE").map((c) => c.name)),
+    [categories]
+  );
+
+  const transactions = useMemo(() => {
+    const byUnit = selectedUnit === "all"
+      ? allTransactions
+      : allTransactions.filter((t) => t.cost_center === selectedUnit);
+    return byUnit.filter((t) => !naoDreCats.has(t.category));
+  }, [allTransactions, selectedUnit, naoDreCats]);
 
   const stats = useMemo(() => {
     const sum = (arr, type) =>
@@ -209,6 +224,13 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      <GoalAlert
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+        totalEntradas={stats.entradas}
+        totalResultado={stats.resultado}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard

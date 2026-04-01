@@ -211,7 +211,8 @@ export default function DRE() {
     const totalFixos = Array(12).fill(0);
     fixedRows.forEach((r) => r.monthly.forEach((v, i) => (totalFixos[i] += v)));
 
-    // EBITDA = Margem de Contribuição - Gastos Fixos
+    // Resultado Operacional (LAJIR) = Margem de Contribuição - Gastos Fixos
+    // Nota: EBITDA real requer D&A que não é rastreado. Este é o Resultado Operacional (LAJIR).
     const ebitda = margemContribuicao.map((v, i) => v - totalFixos[i]);
     const ebitdaPct = totalEntradas.map((v, i) => v > 0 ? (ebitda[i] / v) * 100 : 0);
 
@@ -559,9 +560,9 @@ export default function DRE() {
                 ))}
                 <DRERow label="TOTAL GASTOS FIXOS" monthly={dreData.totalFixos} bold highlight negative />
 
-                {/* ── EBITDA / RESULTADO OPERACIONAL ── */}
+                {/* ── RESULTADO OPERACIONAL (LAJIR) ── */}
                 <ResultRow
-                  label="EBITDA / RESULTADO OPERACIONAL"
+                  label="RESULTADO OPERACIONAL (LAJIR)"
                   monthly={dreData.ebitda}
                   pctMonthly={dreData.ebitdaPct}
                   colorFn={(v) => (v < 0 ? "text-destructive" : "text-primary")}

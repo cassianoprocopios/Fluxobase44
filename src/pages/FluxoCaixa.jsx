@@ -79,11 +79,19 @@ export default function FluxoCaixa() {
     const year = parseInt(selectedYear);
     let saldoAcumulado = 0;
 
+    // Excluir categorias "Não DRE" (transferências entre contas) do fluxo de caixa
+    const naoDreCats = new Set(
+      categories.filter((c) => c.dre_group === "Não DRE").map((c) => c.name)
+    );
+
     return MONTHS_PT.map((month, idx) => {
       const monthTxns = transactions.filter((t) => {
         if (!t.date || t.status === "cancelado") return false;
         const d = new Date(t.date);
-        return d.getFullYear() === year && d.getMonth() === idx;
+        if (d.getFullYear() !== year || d.getMonth() !== idx) return false;
+        // Excluir transferências entre contas
+        if (naoDreCats.has(t.category)) return false;
+        return true;
       });
 
       const entradas = monthTxns
@@ -93,32 +101,31 @@ export default function FluxoCaixa() {
         .filter((t) => t.type === "saida")
         .reduce((s, t) => s + (t.amount || 0), 0);
       const saldo = entradas - saidas;
-      const geracaoCaixa = saldo;
       saldoAcumulado += saldo;
 
-      // Entradas agrupadas por dre_group
+      // Entradas agrupadas por dre_group (excluindo Não DRE)
       const entradaCats = {};
       monthTxns.filter((t) => t.type === "entrada").forEach((t) => {
         const catObj = categories.find((c) => c.name === t.category && c.type === "entrada");
-        const groupKey = (catObj?.dre_group && catObj.dre_group !== "Não DRE") ? catObj.dre_group : (t.category || "Sem categoria");
+        const groupKey = catObj?.dre_group || t.category || "Sem categoria";
         if (!entradaCats[groupKey]) entradaCats[groupKey] = { total: 0, cats: {} };
         entradaCats[groupKey].total += t.amount || 0;
         const catName = t.category || "Sem categoria";
         entradaCats[groupKey].cats[catName] = (entradaCats[groupKey].cats[catName] || 0) + (t.amount || 0);
       });
 
-      // Saídas agrupadas por dre_group
+      // Saídas agrupadas por dre_group (excluindo Não DRE)
       const saidaCats = {};
       monthTxns.filter((t) => t.type === "saida").forEach((t) => {
         const catObj = categories.find((c) => c.name === t.category && c.type === "saida");
-        const groupKey = (catObj?.dre_group && catObj.dre_group !== "Não DRE") ? catObj.dre_group : (t.category || "Sem categoria");
+        const groupKey = catObj?.dre_group || t.category || "Sem categoria";
         if (!saidaCats[groupKey]) saidaCats[groupKey] = { total: 0, cats: {} };
         saidaCats[groupKey].total += t.amount || 0;
         const catName = t.category || "Sem categoria";
         saidaCats[groupKey].cats[catName] = (saidaCats[groupKey].cats[catName] || 0) + (t.amount || 0);
       });
 
-      return { month, idx, entradas, saidas, saldo, geracaoCaixa, acumulado: saldoAcumulado, entradaCats, saidaCats };
+      return { month, idx, entradas, saidas, saldo, geracaoCaixa: saldo, acumulado: saldoAcumulado, entradaCats, saidaCats };
     });
   }, [transactions, selectedYear, categories]);
 

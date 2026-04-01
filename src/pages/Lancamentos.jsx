@@ -156,10 +156,11 @@ export default function Lancamentos() {
     const headers = ["Data", "Tipo", "Categoria", "Descrição", "Valor", "Pagamento", "Unidade", "Banco"];
     const rows = filtered.map((t) => [
       t.date,
-      t.type,
+      t.type === "entrada" ? "Entrada" : "Saída",
       t.category || "",
       t.description || "",
-      t.amount,
+      // Formato brasileiro — compatível com Excel BR
+      String(t.amount || 0).replace(".", ","),
       t.payment_method || "",
       t.cost_center || "",
       t.bank_account || "",

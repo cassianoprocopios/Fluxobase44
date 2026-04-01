@@ -124,22 +124,21 @@ export default function Auditoria() {
     // Pegar apenas transferências (categorias Não DRE)
     const transfers = transactions.filter((t) => naoDreCatNames.has(t.category));
 
-    // Agrupar por data + valor para verificar se há par entrada+saída NO MESMO DIA
-    const byDayAmount = new Map();
+    // Agrupar apenas por valor — transferências podem ocorrer em dias diferentes (ex: TED)
+    const byAmount = new Map();
     for (const t of transfers) {
-      const key = `${t.date?.substring(0, 10)}||${(t.amount || 0).toFixed(2)}`;
-      if (!byDayAmount.has(key)) byDayAmount.set(key, { entradas: [], saidas: [] });
-      if (t.type === "entrada") byDayAmount.get(key).entradas.push(t);
-      else byDayAmount.get(key).saidas.push(t);
+      const key = (t.amount || 0).toFixed(2);
+      if (!byAmount.has(key)) byAmount.set(key, { entradas: [], saidas: [] });
+      if (t.type === "entrada") byAmount.get(key).entradas.push(t);
+      else byAmount.get(key).saidas.push(t);
     }
 
     const issues = [];
 
-    for (const [k, { entradas, saidas }] of byDayAmount.entries()) {
-      const [date, amountKey] = k.split("||");
+    for (const [amountKey, { entradas, saidas }] of byAmount.entries()) {
       const amount = parseFloat(amountKey);
 
-      // Pares balanceados no mesmo dia (1 entrada = 1 saída)
+      // Pares balanceados: 1 entrada = 1 saída de mesmo valor
       const pairs = Math.min(entradas.length, saidas.length);
       const extraEntradas = entradas.slice(pairs);
       const extraSaidas = saidas.slice(pairs);
@@ -149,7 +148,6 @@ export default function Auditoria() {
           key: `orphan-entrada-${t.id}`,
           problem: "entrada_sem_saida",
           amount,
-          date,
           items: [t],
         });
       }
@@ -159,7 +157,6 @@ export default function Auditoria() {
           key: `orphan-saida-${t.id}`,
           problem: "saida_sem_entrada",
           amount,
-          date,
           items: [t],
         });
       }

@@ -22,6 +22,10 @@
       "type": "number",
       "description": "Total de comiss\u00f5es dos profissionais referentes ao per\u00edodo (pagas em outro momento)"
     },
+    "salaries": {
+      "type": "number",
+      "description": "Total de sal\u00e1rios e encargos do per\u00edodo (CLT, pr\u00f3-labore, etc.)"
+    },
     "taxes": {
       "type": "number",
       "description": "Impostos de compet\u00eancia do per\u00edodo (DAS, ISS, etc. \u2014 pagos em outro momento)"

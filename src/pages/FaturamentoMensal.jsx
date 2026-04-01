@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, TrendingUp, DollarSign, Users, Receipt } from "lucide-react";
+import { Plus, Pencil, Trash2, TrendingUp, DollarSign, Users, Receipt, Banknote } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, MONTHS_PT } from "@/lib/constants";
 
@@ -39,6 +39,7 @@ const EMPTY_FORM = {
   cost_center: "",
   gross_revenue: "",
   commissions: "",
+  salaries: "",
   taxes: "",
   notes: "",
 };
@@ -95,6 +96,7 @@ export default function FaturamentoMensal() {
       cost_center: b.cost_center,
       gross_revenue: b.gross_revenue,
       commissions: b.commissions || "",
+      salaries: b.salaries || "",
       taxes: b.taxes || "",
       notes: b.notes || "",
     });
@@ -109,6 +111,7 @@ export default function FaturamentoMensal() {
       month: parseInt(form.month),
       gross_revenue: parseFloat(form.gross_revenue) || 0,
       commissions: parseFloat(form.commissions) || 0,
+      salaries: parseFloat(form.salaries) || 0,
       taxes: parseFloat(form.taxes) || 0,
     };
     if (editing) {
@@ -126,15 +129,17 @@ export default function FaturamentoMensal() {
     const entries = billings.filter((b) => b.month === month);
     const totalRevenue = entries.reduce((s, b) => s + (b.gross_revenue || 0), 0);
     const totalCommissions = entries.reduce((s, b) => s + (b.commissions || 0), 0);
+    const totalSalaries = entries.reduce((s, b) => s + (b.salaries || 0), 0);
     const totalTaxes = entries.reduce((s, b) => s + (b.taxes || 0), 0);
-    return { month, label, entries, totalRevenue, totalCommissions, totalTaxes };
+    return { month, label, entries, totalRevenue, totalCommissions, totalSalaries, totalTaxes };
   }).filter((m) => m.entries.length > 0);
 
   // KPIs anuais
   const totalRevenue = billings.reduce((s, b) => s + (b.gross_revenue || 0), 0);
   const totalCommissions = billings.reduce((s, b) => s + (b.commissions || 0), 0);
+  const totalSalaries = billings.reduce((s, b) => s + (b.salaries || 0), 0);
   const totalTaxes = billings.reduce((s, b) => s + (b.taxes || 0), 0);
-  const netRevenue = totalRevenue - totalCommissions - totalTaxes;
+  const netRevenue = totalRevenue - totalCommissions - totalSalaries - totalTaxes;
 
   return (
     <div className="space-y-6">
@@ -165,7 +170,7 @@ export default function FaturamentoMensal() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-5 flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
@@ -190,6 +195,17 @@ export default function FaturamentoMensal() {
         </Card>
         <Card>
           <CardContent className="pt-5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+              <Banknote className="w-4 h-4 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Salários</p>
+              <p className="text-lg font-bold text-blue-500">{formatCurrency(totalSalaries)}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
               <Receipt className="w-4 h-4 text-orange-500" />
             </div>
@@ -205,7 +221,7 @@ export default function FaturamentoMensal() {
               <DollarSign className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Líquido (fat - com - imp)</p>
+              <p className="text-xs text-muted-foreground">Líquido (fat-com-sal-imp)</p>
               <p className={`text-lg font-bold ${netRevenue >= 0 ? "text-primary" : "text-destructive"}`}>
                 {formatCurrency(netRevenue)}
               </p>
@@ -232,7 +248,7 @@ export default function FaturamentoMensal() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {byMonth.map(({ month, label, entries, totalRevenue: rev, totalCommissions: comm, totalTaxes: tax }) => (
+          {byMonth.map(({ month, label, entries, totalRevenue: rev, totalCommissions: comm, totalSalaries: sal, totalTaxes: tax }) => (
             <Card key={month}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
@@ -240,8 +256,9 @@ export default function FaturamentoMensal() {
                   <div className="flex items-center gap-3 text-sm flex-wrap">
                     <span className="text-success font-semibold">Fat: {formatCurrency(rev)}</span>
                     <span className="text-destructive font-semibold">Com: {formatCurrency(comm)}</span>
+                    <span className="text-blue-500 font-semibold">Sal: {formatCurrency(sal)}</span>
                     <span className="text-orange-500 font-semibold">Imp: {formatCurrency(tax)}</span>
-                    <span className="text-primary font-bold">Líq: {formatCurrency(rev - comm - tax)}</span>
+                    <span className="text-primary font-bold">Líq: {formatCurrency(rev - comm - sal - tax)}</span>
                   </div>
                 </div>
               </CardHeader>
@@ -253,6 +270,7 @@ export default function FaturamentoMensal() {
                         <th className="text-left py-2 px-3">Unidade</th>
                         <th className="text-right py-2 px-3">Fat. Bruto</th>
                         <th className="text-right py-2 px-3">Comissões</th>
+                        <th className="text-right py-2 px-3">Salários</th>
                         <th className="text-right py-2 px-3">Impostos</th>
                         <th className="text-right py-2 px-3">Fat. Líquido</th>
                         <th className="text-left py-2 px-3">Obs.</th>
@@ -269,11 +287,14 @@ export default function FaturamentoMensal() {
                           <td className="py-2.5 px-3 text-right text-destructive">
                             {formatCurrency(b.commissions || 0)}
                           </td>
+                          <td className="py-2.5 px-3 text-right text-blue-500">
+                            {formatCurrency(b.salaries || 0)}
+                          </td>
                           <td className="py-2.5 px-3 text-right text-orange-500">
                             {formatCurrency(b.taxes || 0)}
                           </td>
                           <td className="py-2.5 px-3 text-right text-primary font-semibold">
-                            {formatCurrency((b.gross_revenue || 0) - (b.commissions || 0) - (b.taxes || 0))}
+                            {formatCurrency((b.gross_revenue || 0) - (b.commissions || 0) - (b.salaries || 0) - (b.taxes || 0))}
                           </td>
                           <td className="py-2.5 px-3 text-muted-foreground text-xs max-w-[200px] truncate">
                             {b.notes || "—"}
@@ -348,7 +369,7 @@ export default function FaturamentoMensal() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Faturamento Bruto *</Label>
                 <Input
@@ -373,6 +394,20 @@ export default function FaturamentoMensal() {
                   placeholder="0,00"
                   value={form.commissions}
                   onChange={(e) => setForm((p) => ({ ...p, commissions: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>
+                  Salários
+                  <span className="text-xs text-muted-foreground ml-1">(CLT, pró-labore)</span>
+                </Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0,00"
+                  value={form.salaries}
+                  onChange={(e) => setForm((p) => ({ ...p, salaries: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
@@ -407,6 +442,7 @@ export default function FaturamentoMensal() {
                 {formatCurrency(
                   (parseFloat(form.gross_revenue) || 0) -
                   (parseFloat(form.commissions) || 0) -
+                  (parseFloat(form.salaries) || 0) -
                   (parseFloat(form.taxes) || 0)
                 )}
               </span>

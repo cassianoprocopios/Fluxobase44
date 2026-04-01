@@ -20,6 +20,8 @@ export default function TransactionFilters({ filters, setFilters, categories, co
     unit: filters.unit || "",
     bankAccount: filters.bankAccount || "",
     category: filters.category || "",
+    amountMin: filters.amountMin || "",
+    amountMax: filters.amountMax || "",
   });
 
   const updateDraft = (field, value) => setDraft((prev) => ({ ...prev, [field]: value }));
@@ -30,7 +32,7 @@ export default function TransactionFilters({ filters, setFilters, categories, co
   };
 
   const clearFilters = () => {
-    const cleared = { dateFrom: "", dateTo: "", unit: "", bankAccount: "", category: "" };
+    const cleared = { dateFrom: "", dateTo: "", unit: "", bankAccount: "", category: "", amountMin: "", amountMax: "" };
     setDraft(cleared);
     setFilters((prev) => ({ ...prev, search: "", type: "todos", ...cleared }));
   };
@@ -38,7 +40,7 @@ export default function TransactionFilters({ filters, setFilters, categories, co
   const update = (field, value) => setFilters((prev) => ({ ...prev, [field]: value }));
 
   const hasActiveAdvancedFilters =
-    filters.dateFrom || filters.dateTo || filters.unit || filters.bankAccount || filters.category;
+    filters.dateFrom || filters.dateTo || filters.unit || filters.bankAccount || filters.category || filters.amountMin || filters.amountMax;
 
   return (
     <div className="space-y-3">
@@ -82,7 +84,7 @@ export default function TransactionFilters({ filters, setFilters, categories, co
           Filtros
           {hasActiveAdvancedFilters && (
             <span className="bg-primary-foreground text-primary rounded-full w-4 h-4 text-[10px] flex items-center justify-center font-bold">
-              {[filters.dateFrom, filters.dateTo, filters.unit, filters.bankAccount, filters.category].filter(Boolean).length}
+              {[filters.dateFrom, filters.dateTo, filters.unit, filters.bankAccount, filters.category, filters.amountMin, filters.amountMax].filter(Boolean).length}
             </span>
           )}
         </Button>
@@ -99,6 +101,30 @@ export default function TransactionFilters({ filters, setFilters, categories, co
       {showAdvanced && (
         <div className="space-y-3 p-4 bg-muted/30 border border-border rounded-xl">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Valor mínimo</label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                value={draft.amountMin}
+                onChange={(e) => updateDraft("amountMin", e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Valor máximo</label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                value={draft.amountMax}
+                onChange={(e) => updateDraft("amountMax", e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Data inicial</label>
               <Input

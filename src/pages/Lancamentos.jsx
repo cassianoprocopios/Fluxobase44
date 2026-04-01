@@ -49,6 +49,8 @@ export default function Lancamentos() {
     unit: "",
     bankAccount: "",
     category: "",
+    amountMin: "",
+    amountMax: "",
   });
 
   // Busca apenas o mês selecionado no filtro para evitar carregar tudo
@@ -141,6 +143,8 @@ export default function Lancamentos() {
       if (filters.unit && t.cost_center !== filters.unit) return false;
       if (filters.bankAccount && t.bank_account !== filters.bankAccount) return false;
       if (filters.category && t.category !== filters.category) return false;
+      if (filters.amountMin && (t.amount || 0) < parseFloat(filters.amountMin)) return false;
+      if (filters.amountMax && (t.amount || 0) > parseFloat(filters.amountMax)) return false;
       if (
         filters.search &&
         !(t.description || "").toLowerCase().includes(filters.search.toLowerCase()) &&

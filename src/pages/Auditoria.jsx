@@ -124,26 +124,27 @@ export default function Auditoria() {
     // Pegar apenas transferências (categorias Não DRE)
     const transfers = transactions.filter((t) => naoDreCatNames.has(t.category));
 
-    // Agrupar por data + valor — o par deve ser no mesmo dia e mesmo valor
-    const byDayAmount = new Map();
+    // Agrupar apenas por valor — permite pares em dias diferentes (ex: compensação D+1)
+    const byAmount = new Map();
     for (const t of transfers) {
-      const day = (t.date || "").substring(0, 10);
-      const key = `${day}||${(t.amount || 0).toFixed(2)}`;
-      if (!byDayAmount.has(key)) byDayAmount.set(key, { entradas: [], saidas: [] });
-      if (t.type === "entrada") byDayAmount.get(key).entradas.push(t);
-      else byDayAmount.get(key).saidas.push(t);
+      const key = (t.amount || 0).toFixed(2);
+      if (!byAmount.has(key)) byAmount.set(key, { entradas: [], saidas: [] });
+      if (t.type === "entrada") byAmount.get(key).entradas.push(t);
+      else byAmount.get(key).saidas.push(t);
     }
 
     const issues = [];
 
-    for (const [k, { entradas, saidas }] of byDayAmount.entries()) {
-      const [day, amountKey] = k.split("||");
+    for (const [amountKey, { entradas, saidas }] of byAmount.entries()) {
       const amount = parseFloat(amountKey);
 
-      // Pares balanceados: 1 entrada = 1 saída de mesmo valor no mesmo dia
-      const pairs = Math.min(entradas.length, saidas.length);
-      const extraEntradas = entradas.slice(pairs);
-      const extraSaidas = saidas.slice(pairs);
+      // Parear entradas com saídas do mesmo valor (ordenando por data para parear cronologicamente)
+      const sortedEntradas = [...entradas].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+      const sortedSaidas = [...saidas].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+      const pairs = Math.min(sortedEntradas.length, sortedSaidas.length);
+      const extraEntradas = sortedEntradas.slice(pairs);
+      const extraSaidas = sortedSaidas.slice(pairs);
 
       for (const t of extraEntradas) {
         issues.push({

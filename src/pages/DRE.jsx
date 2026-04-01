@@ -71,10 +71,18 @@ export default function DRE() {
 
   const dreData = useMemo(() => {
     const year = parseInt(selectedYear);
+
+    // Categorias marcadas como "Não DRE" (transferências entre contas) — excluir do DRE
+    const naoDreCats = new Set(
+      categories.filter((c) => c.dre_group === "Não DRE").map((c) => c.name)
+    );
+
     const yearTxns = transactions.filter((t) => {
       if (!t.date || t.status === "cancelado") return false;
       if (new Date(t.date).getFullYear() !== year) return false;
       if (selectedUnit !== "all" && t.cost_center !== selectedUnit) return false;
+      // Excluir transferências entre contas (Não DRE)
+      if (naoDreCats.has(t.category)) return false;
       return true;
     });
 
@@ -126,7 +134,7 @@ export default function DRE() {
         })).filter((sr) => sr.monthly.some((v) => v > 0)),
       }));
 
-    // Entradas não mapeadas nos grupos operacionais (exceto Não DRE e Outras Receitas)
+    // Entradas não mapeadas nos grupos operacionais (exceto Não DRE — já filtrado — e Outras Receitas)
     const knownEntryGroups = [...opRevenueGroups, "Não DRE", ...OUTRAS_RECEITAS_GROUPS];
     const knownEntryCats = knownEntryGroups.flatMap((g) => entryGroups[g] || []);
     const ungroupedEntries = getMonthlyTotals(
@@ -168,8 +176,8 @@ export default function DRE() {
         })).filter((sr) => sr.monthly.some((v) => v > 0)),
       }));
 
-    // saídas não mapeadas que não são abaixo da linha
-    const allKnownExitGroups = [...CUSTOS_VARIAVEIS_GROUPS, ...GASTOS_FIXOS_ORDER, ...ABAIXO_DA_LINHA_GROUPS];
+    // saídas não mapeadas que não são abaixo da linha (e não são Não DRE, já filtrado acima)
+    const allKnownExitGroups = [...CUSTOS_VARIAVEIS_GROUPS, ...GASTOS_FIXOS_ORDER, ...ABAIXO_DA_LINHA_GROUPS, "Não DRE"];
     const allKnownExitCats = allKnownExitGroups.flatMap((g) => exitGroups[g] || []);
     const ungroupedExits = getMonthlyTotals(
       (t) => t.type === "saida" && !allKnownExitCats.includes(t.category)

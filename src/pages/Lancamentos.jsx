@@ -27,6 +27,7 @@ import TransactionFilters from "@/components/transactions/TransactionFilters";
 import OFXImportModal from "@/components/transactions/OFXImportModal";
 import BulkClassifyModal from "@/components/transactions/BulkClassifyModal";
 import UnclassifiedAlert from "@/components/transactions/UnclassifiedAlert";
+import TransferBalanceAlert from "@/components/transactions/TransferBalanceAlert";
 import { Link } from "react-router-dom";
 
 export default function Lancamentos() {
@@ -249,6 +250,11 @@ export default function Lancamentos() {
       <UnclassifiedAlert
         transactions={transactions}
         onClassify={() => setShowClassify(true)}
+      />
+
+      <TransferBalanceAlert
+        transactions={transactions}
+        categories={categories}
       />
 
       <TransactionFilters

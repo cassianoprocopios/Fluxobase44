@@ -1,0 +1,76 @@
+{
+  "name": "MonthlyBilling",
+  "type": "object",
+  "properties": {
+    "year": {
+      "type": "number",
+      "description": "Ano de compet\u00eancia"
+    },
+    "month": {
+      "type": "number",
+      "description": "M\u00eas de compet\u00eancia (1-12)"
+    },
+    "cost_center": {
+      "type": "string",
+      "description": "Unidade / Centro de custo"
+    },
+    "gross_revenue": {
+      "type": "number",
+      "description": "Faturamento bruto do per\u00edodo (total dos servi\u00e7os realizados)"
+    },
+    "commissions": {
+      "type": "number",
+      "description": "Total de comiss\u00f5es dos profissionais referentes ao per\u00edodo (pagas no m\u00eas seguinte)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es"
+    }
+  },
+  "required": [
+    "year",
+    "month",
+    "cost_center",
+    "gross_revenue"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "gerente"
+          }
+        }
+      ]
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "gerente"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

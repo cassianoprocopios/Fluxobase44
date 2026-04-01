@@ -22,6 +22,7 @@ import RegrasCategorizacao from '@/pages/RegrasCategorizacao';
 import DashboardUnidades from '@/pages/DashboardUnidades';
 import Usuarios from '@/pages/Usuarios';
 import Auditoria from '@/pages/Auditoria';
+import FaturamentoMensal from '@/pages/FaturamentoMensal';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
         <Route path="/regras-categorizacao" element={<ProtectedRoute><RegrasCategorizacao /></ProtectedRoute>} />
         <Route path="/usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
         <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
+        <Route path="/faturamento" element={<ProtectedRoute><FaturamentoMensal /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

@@ -17,11 +17,13 @@ import {
   Building2,
   Users,
   ShieldAlert,
+  ReceiptText,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/lancamentos", icon: ArrowUpDown, label: "Lançamentos" },
+  { path: "/faturamento", icon: ReceiptText, label: "Faturamento" },
   { path: "/dashboard-unidades", icon: Building2, label: "Unidades" },
   { path: "/dre", icon: FileBarChart, label: "DRE" },
   { path: "/fluxo-caixa", icon: TrendingUp, label: "Fluxo de Caixa" },

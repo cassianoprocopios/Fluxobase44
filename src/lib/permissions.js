@@ -26,6 +26,7 @@ export const ROUTE_PERMISSIONS = {
   "/recorrentes":           [ROLES.ADMIN, ROLES.FINANCEIRO],
   "/regras-categorizacao":  [ROLES.ADMIN, ROLES.FINANCEIRO],
   "/auditoria":             [ROLES.ADMIN, ROLES.FINANCEIRO],
+  "/faturamento":           [ROLES.ADMIN, ROLES.FINANCEIRO, ROLES.GESTOR],
   "/configuracoes":         [ROLES.ADMIN],
   "/usuarios":              [ROLES.ADMIN],
 };

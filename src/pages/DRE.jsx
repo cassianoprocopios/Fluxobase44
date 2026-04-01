@@ -70,8 +70,34 @@ export default function DRE() {
     queryFn: () => base44.entities.CostCenter.list("name"),
   });
 
+  const { data: monthlyBillings = [] } = useQuery({
+    queryKey: ["monthly-billing-dre"],
+    queryFn: () => base44.entities.MonthlyBilling.list(),
+  });
+
   const dreData = useMemo(() => {
     const year = parseInt(selectedYear);
+
+    // ── DADOS DO FATURAMENTO MENSAL (MonthlyBilling) — regime de competência
+    // Filtra pelo ano e unidade selecionados
+    const filteredBillings = monthlyBillings.filter((b) => {
+      if (b.year !== year) return false;
+      if (selectedUnit !== "all" && b.cost_center !== selectedUnit) return false;
+      return true;
+    });
+
+    // Agrega por mês: faturamento bruto, comissões e salários de competência
+    const billingRevenue = Array(12).fill(0);    // faturamento bruto
+    const billingCommissions = Array(12).fill(0); // comissões de competência
+    const billingTaxes = Array(12).fill(0);       // impostos de competência
+    const billingSalaries = Array(12).fill(0);    // salários de competência
+    filteredBillings.forEach((b) => {
+      const m = (b.month || 1) - 1; // 1-12 → 0-11
+      billingRevenue[m] += b.gross_revenue || 0;
+      billingCommissions[m] += b.commissions || 0;
+      billingTaxes[m] += b.taxes || 0;
+      billingSalaries[m] += b.salaries || 0;
+    });
 
     // Categorias marcadas como "Não DRE" (transferências entre contas) — excluir do DRE
     const naoDreCats = new Set(
@@ -129,33 +155,62 @@ export default function DRE() {
     });
 
     // ── RECEITAS OPERACIONAIS (excluir Não DRE e Outras Receitas)
-    const opRevenueGroups = ["Recebimentos de Vendas", "Receitas Financeiras"];
-    const entryRows = opRevenueGroups
-      .filter((g) => entryGroups[g])
-      .map((g) => ({
-        label: g,
-        monthly: getMonthlyTotals((t) => t.type === "entrada" && (entryGroups[g] || []).includes(t.category)),
-        isGroup: true,
-        subRows: [...new Set(entryGroups[g] || [])].map((cat) => ({
-          label: cat,
-          monthly: getMonthlyTotals((t) => t.type === "entrada" && t.category === cat),
-        })).filter((sr) => sr.monthly.some((v) => v > 0)),
-      }));
+    const hasBillingData = filteredBillings.length > 0 && dreMode === "competencia";
 
-    // Entradas não mapeadas nos grupos operacionais (exceto Não DRE — já filtrado — e Outras Receitas)
-    const knownEntryGroups = [...opRevenueGroups, "Não DRE", ...OUTRAS_RECEITAS_GROUPS];
-    const knownEntryCats = knownEntryGroups.flatMap((g) => entryGroups[g] || []);
-    const ungroupedEntries = getMonthlyTotals(
-      (t) => t.type === "entrada" && !knownEntryCats.includes(t.category)
-    );
-    if (ungroupedEntries.some((v) => v > 0)) {
-      entryRows.push({ label: "Outras Entradas", monthly: ungroupedEntries, isGroup: true, subRows: [] });
+    const opRevenueGroups = ["Recebimentos de Vendas", "Receitas Financeiras"];
+    let entryRows;
+
+    if (hasBillingData) {
+      // Usa os dados do Faturamento Mensal como receita de competência
+      // Detalha por unidade se disponível
+      const unitBreakdown = {};
+      filteredBillings.forEach((b) => {
+        const m = (b.month || 1) - 1;
+        if (!unitBreakdown[b.cost_center]) unitBreakdown[b.cost_center] = Array(12).fill(0);
+        unitBreakdown[b.cost_center][m] += b.gross_revenue || 0;
+      });
+      const subRows = Object.entries(unitBreakdown).map(([unit, monthly]) => ({
+        label: unit,
+        monthly,
+      }));
+      entryRows = [{
+        label: "Faturamento Bruto (Competência)",
+        monthly: billingRevenue,
+        isGroup: true,
+        subRows: subRows.length > 1 ? subRows : [],
+      }];
+    } else {
+      entryRows = opRevenueGroups
+        .filter((g) => entryGroups[g])
+        .map((g) => ({
+          label: g,
+          monthly: getMonthlyTotals((t) => t.type === "entrada" && (entryGroups[g] || []).includes(t.category)),
+          isGroup: true,
+          subRows: [...new Set(entryGroups[g] || [])].map((cat) => ({
+            label: cat,
+            monthly: getMonthlyTotals((t) => t.type === "entrada" && t.category === cat),
+          })).filter((sr) => sr.monthly.some((v) => v > 0)),
+        }));
+
+      // Entradas não mapeadas nos grupos operacionais
+      const knownEntryGroups = [...opRevenueGroups, "Não DRE", ...OUTRAS_RECEITAS_GROUPS];
+      const knownEntryCats = knownEntryGroups.flatMap((g) => entryGroups[g] || []);
+      const ungroupedEntries = getMonthlyTotals(
+        (t) => t.type === "entrada" && !knownEntryCats.includes(t.category)
+      );
+      if (ungroupedEntries.some((v) => v > 0)) {
+        entryRows.push({ label: "Outras Entradas", monthly: ungroupedEntries, isGroup: true, subRows: [] });
+      }
     }
 
     const totalEntradas = Array(12).fill(0);
-    entryRows.forEach((r) => r.monthly.forEach((v, i) => (totalEntradas[i] += v)));
+    if (hasBillingData) {
+      billingRevenue.forEach((v, i) => (totalEntradas[i] = v));
+    } else {
+      entryRows.forEach((r) => r.monthly.forEach((v, i) => (totalEntradas[i] += v)));
+    }
 
-    // ── OUTRAS RECEITAS (aportes, empréstimos, etc.)
+    // ── OUTRAS RECEITAS (aportes, empréstimos, etc.) — sempre via transações
     const outrasReceitasRows = OUTRAS_RECEITAS_GROUPS
       .filter((g) => entryGroups[g])
       .map((g) => ({
@@ -192,6 +247,37 @@ export default function DRE() {
     );
     if (ungroupedExits.some((v) => v > 0)) {
       variableRows.push({ label: "Outras Despesas Variáveis", monthly: ungroupedExits, isGroup: true, subRows: [] });
+    }
+
+    // Se houver dados de MonthlyBilling em modo competência, adicionar comissões e impostos como custos variáveis
+    if (hasBillingData) {
+      const hasCommissions = billingCommissions.some((v) => v > 0);
+      const hasTaxes = billingTaxes.some((v) => v > 0);
+      const hasSalaries = billingSalaries.some((v) => v > 0);
+      if (hasCommissions) {
+        variableRows.push({
+          label: "Comissões (competência)",
+          monthly: billingCommissions,
+          isGroup: true,
+          subRows: [],
+        });
+      }
+      if (hasTaxes) {
+        variableRows.push({
+          label: "Impostos (competência)",
+          monthly: billingTaxes,
+          isGroup: true,
+          subRows: [],
+        });
+      }
+      if (hasSalaries) {
+        variableRows.push({
+          label: "Salários e Encargos (competência)",
+          monthly: billingSalaries,
+          isGroup: true,
+          subRows: [],
+        });
+      }
     }
 
     const totalVariaveis = Array(12).fill(0);
@@ -272,7 +358,7 @@ export default function DRE() {
       margemLiquida,
       saldoFinal,
     };
-  }, [transactions, categories, selectedYear, selectedUnit, dreMode]);
+  }, [transactions, categories, monthlyBillings, selectedYear, selectedUnit, dreMode]);
 
   const years = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
 

@@ -20,7 +20,11 @@
     },
     "commissions": {
       "type": "number",
-      "description": "Total de comiss\u00f5es dos profissionais referentes ao per\u00edodo (pagas no m\u00eas seguinte)"
+      "description": "Total de comiss\u00f5es dos profissionais referentes ao per\u00edodo (pagas em outro momento)"
+    },
+    "taxes": {
+      "type": "number",
+      "description": "Impostos de compet\u00eancia do per\u00edodo (DAS, ISS, etc. \u2014 pagos em outro momento)"
     },
     "notes": {
       "type": "string",

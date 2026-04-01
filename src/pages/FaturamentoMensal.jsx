@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, TrendingUp, DollarSign, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, TrendingUp, DollarSign, Users, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, MONTHS_PT } from "@/lib/constants";
 
@@ -39,6 +39,7 @@ const EMPTY_FORM = {
   cost_center: "",
   gross_revenue: "",
   commissions: "",
+  taxes: "",
   notes: "",
 };
 
@@ -94,6 +95,7 @@ export default function FaturamentoMensal() {
       cost_center: b.cost_center,
       gross_revenue: b.gross_revenue,
       commissions: b.commissions || "",
+      taxes: b.taxes || "",
       notes: b.notes || "",
     });
     setShowForm(true);
@@ -107,6 +109,7 @@ export default function FaturamentoMensal() {
       month: parseInt(form.month),
       gross_revenue: parseFloat(form.gross_revenue) || 0,
       commissions: parseFloat(form.commissions) || 0,
+      taxes: parseFloat(form.taxes) || 0,
     };
     if (editing) {
       updateMutation.mutate({ id: editing.id, data });
@@ -123,13 +126,15 @@ export default function FaturamentoMensal() {
     const entries = billings.filter((b) => b.month === month);
     const totalRevenue = entries.reduce((s, b) => s + (b.gross_revenue || 0), 0);
     const totalCommissions = entries.reduce((s, b) => s + (b.commissions || 0), 0);
-    return { month, label, entries, totalRevenue, totalCommissions };
+    const totalTaxes = entries.reduce((s, b) => s + (b.taxes || 0), 0);
+    return { month, label, entries, totalRevenue, totalCommissions, totalTaxes };
   }).filter((m) => m.entries.length > 0);
 
   // KPIs anuais
   const totalRevenue = billings.reduce((s, b) => s + (b.gross_revenue || 0), 0);
   const totalCommissions = billings.reduce((s, b) => s + (b.commissions || 0), 0);
-  const netRevenue = totalRevenue - totalCommissions;
+  const totalTaxes = billings.reduce((s, b) => s + (b.taxes || 0), 0);
+  const netRevenue = totalRevenue - totalCommissions - totalTaxes;
 
   return (
     <div className="space-y-6">
@@ -160,37 +165,48 @@ export default function FaturamentoMensal() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="pt-5 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-success" />
+          <CardContent className="pt-5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-4 h-4 text-success" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Faturamento Bruto {selectedYear}</p>
-              <p className="text-xl font-bold text-success">{formatCurrency(totalRevenue)}</p>
+              <p className="text-xs text-muted-foreground">Faturamento Bruto</p>
+              <p className="text-lg font-bold text-success">{formatCurrency(totalRevenue)}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-5 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-destructive" />
+          <CardContent className="pt-5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+              <Users className="w-4 h-4 text-destructive" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Comissões do Período</p>
-              <p className="text-xl font-bold text-destructive">{formatCurrency(totalCommissions)}</p>
+              <p className="text-xs text-muted-foreground">Comissões</p>
+              <p className="text-lg font-bold text-destructive">{formatCurrency(totalCommissions)}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-5 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-primary" />
+          <CardContent className="pt-5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+              <Receipt className="w-4 h-4 text-orange-500" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Faturamento Líquido (após comissões)</p>
-              <p className={`text-xl font-bold ${netRevenue >= 0 ? "text-primary" : "text-destructive"}`}>
+              <p className="text-xs text-muted-foreground">Impostos</p>
+              <p className="text-lg font-bold text-orange-500">{formatCurrency(totalTaxes)}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <DollarSign className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Líquido (fat - com - imp)</p>
+              <p className={`text-lg font-bold ${netRevenue >= 0 ? "text-primary" : "text-destructive"}`}>
                 {formatCurrency(netRevenue)}
               </p>
             </div>
@@ -216,15 +232,16 @@ export default function FaturamentoMensal() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {byMonth.map(({ month, label, entries, totalRevenue: rev, totalCommissions: comm }) => (
+          {byMonth.map(({ month, label, entries, totalRevenue: rev, totalCommissions: comm, totalTaxes: tax }) => (
             <Card key={month}>
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle className="text-base">{label} {selectedYear}</CardTitle>
-                  <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-3 text-sm flex-wrap">
                     <span className="text-success font-semibold">Fat: {formatCurrency(rev)}</span>
                     <span className="text-destructive font-semibold">Com: {formatCurrency(comm)}</span>
-                    <span className="text-primary font-bold">Líq: {formatCurrency(rev - comm)}</span>
+                    <span className="text-orange-500 font-semibold">Imp: {formatCurrency(tax)}</span>
+                    <span className="text-primary font-bold">Líq: {formatCurrency(rev - comm - tax)}</span>
                   </div>
                 </div>
               </CardHeader>
@@ -234,8 +251,9 @@ export default function FaturamentoMensal() {
                     <thead>
                       <tr className="border-b text-xs text-muted-foreground">
                         <th className="text-left py-2 px-3">Unidade</th>
-                        <th className="text-right py-2 px-3">Faturamento Bruto</th>
+                        <th className="text-right py-2 px-3">Fat. Bruto</th>
                         <th className="text-right py-2 px-3">Comissões</th>
+                        <th className="text-right py-2 px-3">Impostos</th>
                         <th className="text-right py-2 px-3">Fat. Líquido</th>
                         <th className="text-left py-2 px-3">Obs.</th>
                         <th className="py-2 px-3"></th>
@@ -251,8 +269,11 @@ export default function FaturamentoMensal() {
                           <td className="py-2.5 px-3 text-right text-destructive">
                             {formatCurrency(b.commissions || 0)}
                           </td>
+                          <td className="py-2.5 px-3 text-right text-orange-500">
+                            {formatCurrency(b.taxes || 0)}
+                          </td>
                           <td className="py-2.5 px-3 text-right text-primary font-semibold">
-                            {formatCurrency((b.gross_revenue || 0) - (b.commissions || 0))}
+                            {formatCurrency((b.gross_revenue || 0) - (b.commissions || 0) - (b.taxes || 0))}
                           </td>
                           <td className="py-2.5 px-3 text-muted-foreground text-xs max-w-[200px] truncate">
                             {b.notes || "—"}
@@ -327,7 +348,7 @@ export default function FaturamentoMensal() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label>Faturamento Bruto *</Label>
                 <Input
@@ -354,6 +375,20 @@ export default function FaturamentoMensal() {
                   onChange={(e) => setForm((p) => ({ ...p, commissions: e.target.value }))}
                 />
               </div>
+              <div className="space-y-2">
+                <Label>
+                  Impostos
+                  <span className="text-xs text-muted-foreground ml-1">(competência)</span>
+                </Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0,00"
+                  value={form.taxes}
+                  onChange={(e) => setForm((p) => ({ ...p, taxes: e.target.value }))}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -368,10 +403,14 @@ export default function FaturamentoMensal() {
 
             <div className="p-3 bg-muted/40 rounded-lg text-sm text-muted-foreground">
               💡 <strong>Faturamento Líquido:</strong>{" "}
-              {formatCurrency(
-                (parseFloat(form.gross_revenue) || 0) - (parseFloat(form.commissions) || 0)
-              )}
-              {" "}— as comissões serão pagas em outro momento via lançamento de saída.
+              <span className="text-primary font-semibold">
+                {formatCurrency(
+                  (parseFloat(form.gross_revenue) || 0) -
+                  (parseFloat(form.commissions) || 0) -
+                  (parseFloat(form.taxes) || 0)
+                )}
+              </span>
+              {" "}— comissões e impostos são de competência e serão pagos em outro momento.
             </div>
 
             <div className="flex justify-end gap-3 pt-1">

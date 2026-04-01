@@ -120,7 +120,12 @@ export default function TransactionForm({
           <Input
             type="date"
             value={form.date}
-            onChange={(e) => handleChange("date", e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (!v || parseInt(v.substring(0, 4)) >= 2000) {
+                handleChange("date", v);
+              }
+            }}
             required
           />
         </div>
@@ -134,8 +139,13 @@ export default function TransactionForm({
           <Input
             type="date"
             value={form.competence_date || ""}
-            onChange={(e) => handleChange("competence_date", e.target.value)}
-            placeholder="Se diferente da data de pagamento"
+            onChange={(e) => {
+              const v = e.target.value;
+              // Aceita apenas datas com ano >= 2000
+              if (!v || parseInt(v.substring(0, 4)) >= 2000) {
+                handleChange("competence_date", v);
+              }
+            }}
           />
         </div>
 
@@ -148,7 +158,7 @@ export default function TransactionForm({
             </SelectTrigger>
             <SelectContent>
               {filteredCategories.map((c, i) => (
-                <SelectItem key={`${c.id || c.name}-${i}`} value={c.name}>
+                <SelectItem key={`cat-${i}-${c.name}`} value={c.name}>
                   {c.name}
                 </SelectItem>
               ))}

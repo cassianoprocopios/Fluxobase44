@@ -40,6 +40,7 @@ export default function DRE() {
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedUnit, setSelectedUnit] = useState("all");
   const [expandedGroups, setExpandedGroups] = useState(new Set());
+  const [dreMode, setDreMode] = useState("competencia"); // "competencia" | "caixa"
 
   const toggleGroup = (label) => {
     setExpandedGroups((prev) => {
@@ -104,7 +105,14 @@ export default function DRE() {
     const getMonthlyTotals = (filterFn) => {
       const totals = Array(12).fill(0);
       yearTxns.filter(filterFn).forEach((t) => {
-        const m = new Date(t.date).getMonth();
+        // Em modo competência: usa competence_date se disponível, senão fallback para date
+        const refDate = dreMode === "competencia" && t.competence_date
+          ? t.competence_date
+          : t.date;
+        const d = new Date(refDate);
+        // Só conta se a data de competência cair dentro do ano selecionado
+        if (d.getFullYear() !== year) return;
+        const m = d.getMonth();
         totals[m] += t.amount || 0;
       });
       return totals;
@@ -264,7 +272,7 @@ export default function DRE() {
       margemLiquida,
       saldoFinal,
     };
-  }, [transactions, categories, selectedYear, selectedUnit]);
+  }, [transactions, categories, selectedYear, selectedUnit, dreMode]);
 
   const years = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
 
@@ -440,9 +448,29 @@ export default function DRE() {
           <p className="text-sm text-muted-foreground">
             Demonstração de Resultado do Exercício
             {selectedUnit !== "all" ? ` — ${selectedUnit}` : " — Todas as Unidades"}
+            {" · "}
+            <span className="font-medium text-primary">
+              {dreMode === "competencia" ? "Regime de Competência" : "Regime de Caixa"}
+            </span>
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          {/* Toggle Competência / Caixa */}
+          <div className="flex rounded-lg border border-border overflow-hidden text-sm">
+            <button
+              onClick={() => setDreMode("competencia")}
+              className={`px-3 py-1.5 font-medium transition-colors ${dreMode === "competencia" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
+            >
+              Competência
+            </button>
+            <button
+              onClick={() => setDreMode("caixa")}
+              className={`px-3 py-1.5 font-medium transition-colors ${dreMode === "caixa" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
+            >
+              Caixa
+            </button>
+          </div>
+
           {/* Filtro Unidade */}
           <Select value={selectedUnit} onValueChange={setSelectedUnit}>
             <SelectTrigger className="w-44">

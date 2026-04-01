@@ -17,6 +17,7 @@ import CategorySuggestion from "./CategorySuggestion";
 
 const EMPTY_FORM = {
   date: new Date().toISOString().split("T")[0],
+  competence_date: "",
   type: "entrada",
   category: "",
   description: "",
@@ -115,12 +116,26 @@ export default function TransactionForm({
 
         {/* Date */}
         <div className="space-y-2">
-          <Label>Data *</Label>
+          <Label>Data de Pagamento *</Label>
           <Input
             type="date"
             value={form.date}
             onChange={(e) => handleChange("date", e.target.value)}
             required
+          />
+        </div>
+
+        {/* Competence Date */}
+        <div className="space-y-2">
+          <Label>
+            Data de Competência
+            <span className="text-xs text-muted-foreground font-normal ml-1">(para DRE gerencial)</span>
+          </Label>
+          <Input
+            type="date"
+            value={form.competence_date || ""}
+            onChange={(e) => handleChange("competence_date", e.target.value)}
+            placeholder="Se diferente da data de pagamento"
           />
         </div>
 

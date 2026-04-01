@@ -1,0 +1,107 @@
+{
+  "name": "Transaction",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do pagamento (regime de caixa)"
+    },
+    "competence_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de compet\u00eancia (m\u00eas de refer\u00eancia do faturamento/despesa)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "entrada",
+        "saida"
+      ],
+      "description": "Tipo: entrada ou sa\u00edda"
+    },
+    "category": {
+      "type": "string",
+      "description": "Categoria principal"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do lan\u00e7amento"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Valor da transa\u00e7\u00e3o"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "pix",
+        "dinheiro",
+        "credito",
+        "debito",
+        "transferencia",
+        "boleto",
+        "outro"
+      ],
+      "description": "Forma de pagamento"
+    },
+    "cost_center": {
+      "type": "string",
+      "description": "Centro de custo / unidade"
+    },
+    "bank_account": {
+      "type": "string",
+      "description": "Banco ou conta"
+    },
+    "is_recurring": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se \u00e9 lan\u00e7amento recorrente"
+    },
+    "dre_classification": {
+      "type": "string",
+      "description": "Classifica\u00e7\u00e3o na DRE"
+    }
+  },
+  "required": [
+    "date",
+    "type",
+    "category",
+    "amount"
+  ],
+  "rls": {
+    "create": {},
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "gerente"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "gerente"
+          }
+        }
+      ]
+    }
+  }
+}

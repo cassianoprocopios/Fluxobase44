@@ -124,32 +124,33 @@ export default function Auditoria() {
     // Pegar apenas transferências (categorias Não DRE)
     const transfers = transactions.filter((t) => naoDreCatNames.has(t.category));
 
-    // Agrupar por valor (com 2 casas decimais) para verificar se há par entrada+saída
-    const byAmount = new Map();
+    // Agrupar por data + valor para verificar se há par entrada+saída NO MESMO DIA
+    const byDayAmount = new Map();
     for (const t of transfers) {
-      const key = (t.amount || 0).toFixed(2);
-      if (!byAmount.has(key)) byAmount.set(key, { entradas: [], saidas: [] });
-      if (t.type === "entrada") byAmount.get(key).entradas.push(t);
-      else byAmount.get(key).saidas.push(t);
+      const key = `${t.date?.substring(0, 10)}||${(t.amount || 0).toFixed(2)}`;
+      if (!byDayAmount.has(key)) byDayAmount.set(key, { entradas: [], saidas: [] });
+      if (t.type === "entrada") byDayAmount.get(key).entradas.push(t);
+      else byDayAmount.get(key).saidas.push(t);
     }
 
     const issues = [];
 
-    for (const [amountKey, { entradas, saidas }] of byAmount.entries()) {
+    for (const [k, { entradas, saidas }] of byDayAmount.entries()) {
+      const [date, amountKey] = k.split("||");
       const amount = parseFloat(amountKey);
 
-      // Contar pares balanceados (1 entrada = 1 saída)
+      // Pares balanceados no mesmo dia (1 entrada = 1 saída)
       const pairs = Math.min(entradas.length, saidas.length);
-      const extraEntradas = entradas.slice(pairs); // sobram entradas sem par
-      const extraSaidas = saidas.slice(pairs);     // sobram saídas sem par
+      const extraEntradas = entradas.slice(pairs);
+      const extraSaidas = saidas.slice(pairs);
 
       for (const t of extraEntradas) {
         issues.push({
           key: `orphan-entrada-${t.id}`,
           problem: "entrada_sem_saida",
           amount,
+          date,
           items: [t],
-          label: `Transferência de entrada sem saída correspondente`,
         });
       }
 
@@ -158,8 +159,8 @@ export default function Auditoria() {
           key: `orphan-saida-${t.id}`,
           problem: "saida_sem_entrada",
           amount,
+          date,
           items: [t],
-          label: `Transferência de saída sem entrada correspondente`,
         });
       }
     }

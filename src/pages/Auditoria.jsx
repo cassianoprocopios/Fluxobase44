@@ -124,21 +124,23 @@ export default function Auditoria() {
     // Pegar apenas transferências (categorias Não DRE)
     const transfers = transactions.filter((t) => naoDreCatNames.has(t.category));
 
-    // Agrupar apenas por valor — transferências podem ocorrer em dias diferentes (ex: TED)
-    const byAmount = new Map();
+    // Agrupar por data + valor — o par deve ser no mesmo dia e mesmo valor
+    const byDayAmount = new Map();
     for (const t of transfers) {
-      const key = (t.amount || 0).toFixed(2);
-      if (!byAmount.has(key)) byAmount.set(key, { entradas: [], saidas: [] });
-      if (t.type === "entrada") byAmount.get(key).entradas.push(t);
-      else byAmount.get(key).saidas.push(t);
+      const day = (t.date || "").substring(0, 10);
+      const key = `${day}||${(t.amount || 0).toFixed(2)}`;
+      if (!byDayAmount.has(key)) byDayAmount.set(key, { entradas: [], saidas: [] });
+      if (t.type === "entrada") byDayAmount.get(key).entradas.push(t);
+      else byDayAmount.get(key).saidas.push(t);
     }
 
     const issues = [];
 
-    for (const [amountKey, { entradas, saidas }] of byAmount.entries()) {
+    for (const [k, { entradas, saidas }] of byDayAmount.entries()) {
+      const [day, amountKey] = k.split("||");
       const amount = parseFloat(amountKey);
 
-      // Pares balanceados: 1 entrada = 1 saída de mesmo valor
+      // Pares balanceados: 1 entrada = 1 saída de mesmo valor no mesmo dia
       const pairs = Math.min(entradas.length, saidas.length);
       const extraEntradas = entradas.slice(pairs);
       const extraSaidas = saidas.slice(pairs);
@@ -161,9 +163,6 @@ export default function Auditoria() {
         });
       }
     }
-
-    // Também detectar: mesma data, mesmo valor, mas tipos iguais (possível lançamento duplicado de transferência)
-    // Isso já é coberto pelas duplicatas acima. Focamos em pares desbalanceados.
 
     return issues.sort((a, b) => b.amount - a.amount);
   }, [transactions, naoDreCatNames]);

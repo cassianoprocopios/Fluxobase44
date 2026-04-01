@@ -145,13 +145,15 @@ export default function Lancamentos() {
       if (filters.category && t.category !== filters.category) return false;
       if (filters.amountMin && (t.amount || 0) < parseFloat(filters.amountMin)) return false;
       if (filters.amountMax && (t.amount || 0) > parseFloat(filters.amountMax)) return false;
-      if (
-        filters.search &&
-        !(t.description || "").toLowerCase().includes(filters.search.toLowerCase()) &&
-        !(t.category || "").toLowerCase().includes(filters.search.toLowerCase()) &&
-        !(t.client_supplier || "").toLowerCase().includes(filters.search.toLowerCase())
-      )
-        return false;
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        const matchesText =
+          (t.description || "").toLowerCase().includes(q) ||
+          (t.category || "").toLowerCase().includes(q) ||
+          (t.client_supplier || "").toLowerCase().includes(q);
+        const matchesAmount = String(t.amount || "").includes(q);
+        if (!matchesText && !matchesAmount) return false;
+      }
       return true;
     });
   }, [transactions, filters]);

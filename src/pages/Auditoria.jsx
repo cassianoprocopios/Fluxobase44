@@ -51,6 +51,12 @@ export default function Auditoria() {
 
   const monthStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
 
+  // Para validação de transferências: busca mês anterior, atual e próximo
+  const prevDate = new Date(selectedYear, selectedMonth - 1, 1);
+  const nextDate = new Date(selectedYear, selectedMonth + 1, 1);
+  const prevMonthStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+  const nextMonthStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}`;
+
   const { data: rawTransactions = [], isLoading } = useQuery({
     queryKey: ["transactions-audit", monthStr],
     queryFn: () =>
@@ -58,6 +64,17 @@ export default function Auditoria() {
         { date: { $gte: `${monthStr}-01`, $lte: `${monthStr}-31` } },
         "-date",
         2000
+      ),
+  });
+
+  // Busca transferências do mês anterior e próximo para parear corretamente
+  const { data: rawAdjacentTransactions = [] } = useQuery({
+    queryKey: ["transactions-audit-adjacent", prevMonthStr, nextMonthStr],
+    queryFn: () =>
+      base44.entities.Transaction.filter(
+        { date: { $gte: `${prevMonthStr}-01`, $lte: `${nextMonthStr}-31` } },
+        "-date",
+        1000
       ),
   });
 
@@ -69,6 +86,12 @@ export default function Auditoria() {
   const transactions = useMemo(
     () => rawTransactions.map(normalizeTransaction),
     [rawTransactions]
+  );
+
+  // Transações adjacentes (mês ant + atual + próx) — usadas apenas para validar transferências
+  const adjacentTransactions = useMemo(
+    () => rawAdjacentTransactions.map(normalizeTransaction),
+    [rawAdjacentTransactions]
   );
 
   // Categorias marcadas como "Não DRE" (transferências entre contas)
@@ -88,11 +111,13 @@ export default function Auditoria() {
   });
 
   // ── 1. DUPLICATAS ──
+  // Critério: mesmo tipo + mesma descrição + mesmo valor + mesma data → provável duplicata real
   const duplicateGroups = useMemo(() => {
     const key = (t) => {
       const desc = (t.description || t.category || "").trim().toLowerCase();
       const amount = (t.amount || 0).toFixed(2);
-      return `${t.type}||${desc}||${amount}`;
+      const date = (t.date || "").substring(0, 10);
+      return `${t.type}||${desc}||${amount}||${date}`;
     };
 
     const map = new Map();
@@ -111,7 +136,7 @@ export default function Auditoria() {
           type,
           desc: desc || "(sem descrição)",
           amount: parseFloat(amount),
-          items: items.sort((a, b) => a.date?.localeCompare(b.date)),
+          items: items.sort((a, b) => (a.created_date || "").localeCompare(b.created_date || "")),
         };
       })
       .sort((a, b) => b.items.length - a.items.length);
@@ -120,9 +145,12 @@ export default function Auditoria() {
   const totalDuplicates = duplicateGroups.reduce((acc, g) => acc + (g.items.length - 1), 0);
 
   // ── 2. TRANSFERÊNCIAS DESBALANCEADAS ──
+  // Usa 3 meses (ant + atual + prox) para evitar falsos positivos em transferências entre meses
   const transferIssues = useMemo(() => {
-    // Pegar apenas transferências (categorias Não DRE)
-    const transfers = transactions.filter((t) => naoDreCatNames.has(t.category));
+    // Transferências do mês atual (para mostrar na UI)
+    const currentMonthTransfers = transactions.filter((t) => naoDreCatNames.has(t.category));
+    // Transferências dos 3 meses para parear (evita falso positivo D+1 cross-month)
+    const transfers = adjacentTransactions.filter((t) => naoDreCatNames.has(t.category));
 
     // Agrupar apenas por valor — permite pares em dias diferentes (ex: compensação D+1)
     const byAmount = new Map();
@@ -146,7 +174,11 @@ export default function Auditoria() {
       const extraEntradas = sortedEntradas.slice(pairs);
       const extraSaidas = sortedSaidas.slice(pairs);
 
+      // Só reporta os órfãos que pertencem ao mês selecionado
+      const currentIds = new Set(currentMonthTransfers.map((t) => t.id));
+
       for (const t of extraEntradas) {
+        if (!currentIds.has(t.id)) continue;
         issues.push({
           key: `orphan-entrada-${t.id}`,
           problem: "entrada_sem_saida",
@@ -156,6 +188,7 @@ export default function Auditoria() {
       }
 
       for (const t of extraSaidas) {
+        if (!currentIds.has(t.id)) continue;
         issues.push({
           key: `orphan-saida-${t.id}`,
           problem: "saida_sem_entrada",
@@ -166,7 +199,7 @@ export default function Auditoria() {
     }
 
     return issues.sort((a, b) => b.amount - a.amount);
-  }, [transactions, naoDreCatNames]);
+  }, [transactions, adjacentTransactions, naoDreCatNames]);
 
   // Totais de transferências para o card de resumo
   const transferSummary = useMemo(() => {

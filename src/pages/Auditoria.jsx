@@ -228,7 +228,7 @@ export default function Auditoria() {
     });
   };
 
-  const years = [currentYear - 1, currentYear, currentYear + 1];
+  const years = [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
   const transferBalanced = Math.abs(transferSummary.diff) < 0.01;
 
   return (
@@ -397,16 +397,16 @@ export default function Auditoria() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate capitalize">{group.desc}</p>
-                          <p className="text-xs text-muted-foreground">
-                            <Badge variant="outline" className="text-[10px] mr-1 py-0">
+                          <div className="flex items-center gap-1 flex-wrap text-xs text-muted-foreground">
+                            <Badge variant="outline" className="text-[10px] py-0">
                               {group.type === "entrada" ? "Entrada" : "Saída"}
                             </Badge>
-                            {group.items.length} ocorrências · valor:{" "}
+                            <span>{group.items.length} ocorrências · valor:{" "}
                             <span className={`font-semibold ${group.type === "entrada" ? "text-success" : "text-destructive"}`}>
                               {group.type === "saida" ? "-" : "+"}{formatCurrency(group.amount)}
                             </span>{" "}
-                            · <span className="text-amber-600 font-medium">{group.items.length - 1} possível(is) duplicata(s)</span>
-                          </p>
+                            · <span className="text-amber-600 font-medium">{group.items.length - 1} possível(is) duplicata(s)</span></span>
+                          </div>
                         </div>
                         <div className="shrink-0 text-muted-foreground">
                           {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}

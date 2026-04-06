@@ -5,6 +5,7 @@ import { normalizeTransaction, formatCurrency, MONTHS_PT } from "@/lib/constants
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import RevisaoClassificacoes from "@/components/auditoria/RevisaoClassificacoes";
 import {
   Select,
   SelectContent,
@@ -48,6 +49,7 @@ export default function Auditoria() {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [expandedGroups, setExpandedGroups] = useState(new Set());
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [activeTab, setActiveTab] = useState("auditoria"); // "auditoria" | "classificacoes"
 
   const monthStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
 
@@ -228,7 +230,7 @@ export default function Auditoria() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Auditoria</h1>
           <p className="text-sm text-muted-foreground">
-            Duplicidades e validação de transferências entre contas
+            Duplicidades, transferências e revisão de classificações
           </p>
         </div>
 
@@ -252,6 +254,35 @@ export default function Auditoria() {
           </Select>
         </div>
       </div>
+
+      {/* Tabs */}
+      <div className="flex rounded-lg border border-border overflow-hidden w-fit text-sm">
+        <button
+          onClick={() => setActiveTab("auditoria")}
+          className={`px-4 py-2 font-medium transition-colors ${activeTab === "auditoria" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
+        >
+          Auditoria
+        </button>
+        <button
+          onClick={() => setActiveTab("classificacoes")}
+          className={`px-4 py-2 font-medium transition-colors ${activeTab === "classificacoes" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
+        >
+          Revisão de Classificações
+        </button>
+      </div>
+
+      {/* Tab: Revisão de Classificações */}
+      {activeTab === "classificacoes" && (
+        <RevisaoClassificacoes
+          transactions={transactions}
+          categories={categories}
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+        />
+      )}
+
+      {/* Tab: Auditoria */}
+      {activeTab === "auditoria" && <>
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -586,6 +617,8 @@ export default function Auditoria() {
           </div>
         </>
       )}
+
+      </> /* fim aba auditoria */}
 
       {/* Delete confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>

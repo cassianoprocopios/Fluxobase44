@@ -53,17 +53,25 @@ export default function Auditoria() {
 
   const monthStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
 
+  // Último dia real do mês selecionado
+  const lastDayOfMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+  const monthEnd = `${monthStr}-${String(lastDayOfMonth).padStart(2, "0")}`;
+
   // Para validação de transferências: busca mês anterior, atual e próximo
   const prevDate = new Date(selectedYear, selectedMonth - 1, 1);
   const nextDate = new Date(selectedYear, selectedMonth + 1, 1);
   const prevMonthStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
   const nextMonthStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}`;
+  const lastDayPrev = new Date(prevDate.getFullYear(), prevDate.getMonth() + 1, 0).getDate();
+  const lastDayNext = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+  const prevMonthEnd = `${prevMonthStr}-${String(lastDayPrev).padStart(2, "0")}`;
+  const nextMonthEnd = `${nextMonthStr}-${String(lastDayNext).padStart(2, "0")}`;
 
   const { data: rawTransactions = [], isLoading } = useQuery({
     queryKey: ["transactions-audit", monthStr],
     queryFn: () =>
       base44.entities.Transaction.filter(
-        { date: { $gte: `${monthStr}-01`, $lte: `${monthStr}-31` } },
+        { date: { $gte: `${monthStr}-01`, $lte: monthEnd } },
         "-date",
         2000
       ),
@@ -74,7 +82,7 @@ export default function Auditoria() {
     queryKey: ["transactions-audit-adjacent", prevMonthStr, nextMonthStr],
     queryFn: () =>
       base44.entities.Transaction.filter(
-        { date: { $gte: `${prevMonthStr}-01`, $lte: `${nextMonthStr}-31` } },
+        { date: { $gte: `${prevMonthStr}-01`, $lte: nextMonthEnd } },
         "-date",
         1000
       ),

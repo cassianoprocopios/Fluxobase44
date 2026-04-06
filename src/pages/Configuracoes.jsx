@@ -113,8 +113,8 @@ export default function Configuracoes() {
   const isGerente = me?.role === "gerente";
   const canManage = isAdmin || isGerente;
 
-  const entryCats = categories.filter((c) => c.type === "entrada");
-  const exitCats = categories.filter((c) => c.type === "saida");
+  const entryCats = categories.filter((c) => c.type === "entrada").sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  const exitCats = categories.filter((c) => c.type === "saida").sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
   const dreGroups = newCat.type === "entrada" ? DRE_ENTRY_GROUPS : DRE_EXIT_GROUPS;
 

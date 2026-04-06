@@ -32,12 +32,13 @@ export default function CategorySuggestion({
     setLoading(true);
     setError("");
 
-    const categoryList = existingCategories
-      .filter((c) => c.type === transactionType)
-      .map((c) => c.name)
-      .join(", ");
+    try {
+      const categoryList = existingCategories
+        .filter((c) => c.type === transactionType)
+        .map((c) => c.name)
+        .join(", ");
 
-    const prompt = `Baseado no histórico de transações e nas categorias disponíveis, sugerir a categoria mais apropriada para esta transação.
+      const prompt = `Baseado no histórico de transações e nas categorias disponíveis, sugerir a categoria mais apropriada para esta transação.
 
 Tipo: ${transactionType === "entrada" ? "Receita/Entrada" : "Despesa/Saída"}
 Descrição: "${description}"
@@ -46,25 +47,27 @@ Categorias disponíveis: ${categoryList || "Nenhuma categoria específica"}
 
 Responda APENAS com o nome exato de uma categoria ou "Outra categoria" se nenhuma se encaixar. Não adicione explicações, apenas o nome da categoria.`;
 
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      model: "gemini_3_flash",
-    });
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt,
+        model: "gemini_3_flash",
+      });
 
-    const suggestedCategory = result?.trim();
+      const suggestedCategory = result?.trim();
 
-    if (
-      suggestedCategory &&
-      suggestedCategory !== "Outra categoria" &&
-      suggestedCategory.length > 0
-    ) {
-      setSuggestion(suggestedCategory);
-      onSuggestion?.(suggestedCategory);
-    } else {
+      if (
+        suggestedCategory &&
+        suggestedCategory !== "Outra categoria" &&
+        suggestedCategory.length > 0
+      ) {
+        setSuggestion(suggestedCategory);
+      } else {
+        setSuggestion(null);
+      }
+    } catch {
       setSuggestion(null);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   if (!description?.trim() || !transactionType || externalLoading) {
@@ -84,6 +87,15 @@ Responda APENAS com o nome exato de uma categoria ou "Outra categoria" se nenhum
           <span className="text-xs text-primary font-medium">
             Sugestão: <span className="font-semibold">{suggestion}</span>
           </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-xs text-primary hover:bg-primary/20"
+            onClick={() => { onSuggestion?.(suggestion); setSuggestion(null); }}
+          >
+            Aplicar
+          </Button>
         </div>
       ) : null}
     </div>

@@ -12,7 +12,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants";
-import AIFinancialAnalysis from "@/components/analysis/AIFinancialAnalysis";
+import DREGoalsAnalysis from "@/components/dre/DREGoalsAnalysis";
 
 // Grupos que compõem os Custos Variáveis (para margem de contribuição)
 const CUSTOS_VARIAVEIS_GROUPS = ["Impostos e Financeiros", "Despesas Variáveis", "Custos Variáveis"];
@@ -545,27 +545,12 @@ export default function DRE() {
         </div>
       </div>
 
-      {/* Análise IA */}
-      <AIFinancialAnalysis
-        label="DRE Gerencial"
-        context={`Ano: ${selectedYear}. Unidade: ${selectedUnit === "all" ? "Todas" : selectedUnit}. Mês filtrado: ${selectedMonth === "all" ? "Ano completo" : MONTHS_PT[parseInt(selectedMonth)]}. Regime: Caixa (com possibilidade de substituição pontual pelo Faturamento Mensal em meses selecionados).`}
-        data={{
-          totalReceitasOperacionais: dreData.totalEntradas,
-          totalOutrasReceitas: dreData.totalOutrasReceitas,
-          totalCustosVariaveis: dreData.totalVariaveis,
-          margemContribuicao: dreData.margemContribuicao,
-          margemContribuicaoPct: dreData.margemContribuicaoPct,
-          totalGastosFixos: dreData.totalFixos,
-          ebitda: dreData.ebitda,
-          ebitdaPct: dreData.ebitdaPct,
-          lucroOperacional: dreData.resultado,
-          margemLiquida: dreData.margemLiquida,
-          saldoFinal: dreData.saldoFinal,
-          gruposReceita: dreData.entryRows.map((r) => ({ nome: r.label, total: r.monthly.reduce((s, v) => s + v, 0) })),
-          gruposCustosVariaveis: dreData.variableRows.map((r) => ({ nome: r.label, total: r.monthly.reduce((s, v) => s + v, 0) })),
-          gruposGastosFixos: dreData.fixedRows.map((r) => ({ nome: r.label, total: r.monthly.reduce((s, v) => s + v, 0) })),
-          meses: MONTHS_PT,
-        }}
+      {/* Análise IA com Metas */}
+      <DREGoalsAnalysis
+        dreData={dreData}
+        selectedYear={selectedYear}
+        selectedMonth={selectedMonth}
+        selectedUnit={selectedUnit}
       />
 
       {/* Tabela DRE */}

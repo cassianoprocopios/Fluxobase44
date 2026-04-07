@@ -18,6 +18,7 @@ import CashFlowAnalysis from "@/components/dashboard/CashFlowAnalysis";
 import CashFlowProjection from "@/components/dashboard/CashFlowProjection";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import GoalAlert from "@/components/dashboard/GoalAlert";
+import ExpensesPieChart from "@/components/dashboard/ExpensesPieChart";
 
 export default function Dashboard() {
   const { data: rawTransactions = [], isLoading } = useQuery({
@@ -265,9 +266,14 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <MonthlyChart data={monthlyData} />
         <CashFlowMini data={monthlyData} />
+        <ExpensesPieChart
+          transactions={transactions}
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

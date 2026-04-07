@@ -40,17 +40,6 @@ export default function DRE() {
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedUnit, setSelectedUnit] = useState("all");
   const [expandedGroups, setExpandedGroups] = useState(new Set());
-  // Meses onde o usuário optou por usar o Faturamento (MonthlyBilling) em vez das entradas de caixa
-  const [useBillingMonths, setUseBillingMonths] = useState(new Set());
-
-  const toggleBillingMonth = (monthIdx) => {
-    setUseBillingMonths((prev) => {
-      const next = new Set(prev);
-      next.has(monthIdx) ? next.delete(monthIdx) : next.add(monthIdx);
-      return next;
-    });
-  };
-
   const toggleGroup = (label) => {
     setExpandedGroups((prev) => {
       const next = new Set(prev);
@@ -75,26 +64,8 @@ export default function DRE() {
     queryFn: () => base44.entities.CostCenter.list("name"),
   });
 
-  const { data: monthlyBillings = [] } = useQuery({
-    queryKey: ["monthly-billing-dre"],
-    queryFn: () => base44.entities.MonthlyBilling.list(),
-  });
-
   const dreData = useMemo(() => {
     const year = parseInt(selectedYear);
-
-    // ── DADOS DO FATURAMENTO MENSAL (MonthlyBilling) — para substituição pontual
-    const filteredBillings = monthlyBillings.filter((b) => {
-      if (b.year !== year) return false;
-      if (selectedUnit !== "all" && b.cost_center !== selectedUnit) return false;
-      return true;
-    });
-
-    const billingRevenue = Array(12).fill(0);
-    filteredBillings.forEach((b) => {
-      const m = (b.month || 1) - 1;
-      billingRevenue[m] += b.gross_revenue || 0;
-    });
 
     // Categorias marcadas como "Não DRE" — excluir do DRE
     const naoDreCats = new Set(
@@ -135,28 +106,21 @@ export default function DRE() {
     };
 
     // ── RECEITAS OPERACIONAIS (regime de caixa)
-    // Para meses em que useBillingMonths está ativo, substitui o valor pelo Faturamento Mensal
     const opRevenueGroups = ["Recebimentos de Vendas", "Receitas Financeiras"];
 
-    const cashEntryMonthly = Array(12).fill(0);
+    const revenueMonthly = Array(12).fill(0);
     opRevenueGroups.forEach((g) => {
       if (!entryGroups[g]) return;
       getMonthlyTotals((t) => t.type === "entrada" && (entryGroups[g] || []).includes(t.category))
-        .forEach((v, i) => (cashEntryMonthly[i] += v));
+        .forEach((v, i) => (revenueMonthly[i] += v));
     });
 
     // Entradas não mapeadas
     const knownEntryGroups = [...opRevenueGroups, "Não DRE", ...OUTRAS_RECEITAS_GROUPS];
     const knownEntryCats = knownEntryGroups.flatMap((g) => entryGroups[g] || []);
     getMonthlyTotals((t) => t.type === "entrada" && !knownEntryCats.includes(t.category))
-      .forEach((v, i) => (cashEntryMonthly[i] += v));
+      .forEach((v, i) => (revenueMonthly[i] += v));
 
-    // Monta linha de receita: mês a mês decide caixa ou faturamento
-    const revenueMonthly = cashEntryMonthly.map((cashVal, i) =>
-      useBillingMonths.has(i) && billingRevenue[i] > 0 ? billingRevenue[i] : cashVal
-    );
-
-    // subRows por grupo de receita (regime caixa, sempre)
     const entrySubRows = opRevenueGroups
       .filter((g) => entryGroups[g])
       .map((g) => ({
@@ -175,9 +139,6 @@ export default function DRE() {
         monthly: revenueMonthly,
         isGroup: true,
         subRows: entrySubRows.flatMap((r) => r.subRows),
-        isBillingRow: true, // flag para renderizar botões de toggle
-        billingRevenue,
-        cashMonthly: cashEntryMonthly,
       },
     ];
 
@@ -293,10 +254,8 @@ export default function DRE() {
       resultado,
       margemLiquida,
       saldoFinal,
-      billingRevenue,
-      hasBillingData: filteredBillings.length > 0,
     };
-  }, [transactions, categories, monthlyBillings, selectedYear, selectedUnit, useBillingMonths]);
+  }, [transactions, categories, selectedYear, selectedUnit]);
 
   const years = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
 
@@ -337,31 +296,8 @@ export default function DRE() {
               ↳ {row.label}
             </span>
           </td>
-          {visibleMonths.map(({ idx }, i) => {
+          {visibleMonths.map(({ idx }) => {
             const v = row.monthly[idx] || 0;
-            if (row.isBillingRow && dreData.hasBillingData) {
-              const usingBilling = useBillingMonths.has(idx);
-              const hasBillingVal = (row.billingRevenue?.[idx] || 0) > 0;
-              return (
-                <td key={idx} className="px-2 py-1.5 text-sm text-right whitespace-nowrap">
-                  <div className="flex flex-col items-end gap-0.5">
-                    <span className="font-medium">{formatCurrency(v)}</span>
-                    {hasBillingVal && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleBillingMonth(idx); }}
-                        className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
-                          usingBilling
-                            ? "bg-primary/15 border-primary/40 text-primary font-semibold"
-                            : "bg-muted border-border text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                        }`}
-                      >
-                        {usingBilling ? "✓ Fat." : "Fat. →"}
-                      </button>
-                    )}
-                  </div>
-                </td>
-              );
-            }
             return (
               <td key={idx} className={`px-3 py-2.5 text-sm text-right whitespace-nowrap ${negative && v > 0 ? "text-destructive" : ""}`}>
                 {formatCurrency(negative ? -v : v)}
@@ -499,9 +435,6 @@ export default function DRE() {
           <p className="text-sm text-muted-foreground">
             Demonstração de Resultado do Exercício — Regime de Caixa
             {selectedUnit !== "all" ? ` · ${selectedUnit}` : " · Todas as Unidades"}
-            {dreData.hasBillingData && (
-              <span className="ml-2 text-primary font-medium">· Faturamento disponível (clique em "Fat. →" por mês)</span>
-            )}
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">

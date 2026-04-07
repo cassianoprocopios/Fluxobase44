@@ -40,7 +40,16 @@ export default function DRE() {
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedUnit, setSelectedUnit] = useState("all");
   const [expandedGroups, setExpandedGroups] = useState(new Set());
-  const [dreMode, setDreMode] = useState("competencia"); // "competencia" | "caixa"
+  // Meses onde o usuário optou por usar o Faturamento (MonthlyBilling) em vez das entradas de caixa
+  const [useBillingMonths, setUseBillingMonths] = useState(new Set());
+
+  const toggleBillingMonth = (monthIdx) => {
+    setUseBillingMonths((prev) => {
+      const next = new Set(prev);
+      next.has(monthIdx) ? next.delete(monthIdx) : next.add(monthIdx);
+      return next;
+    });
+  };
 
   const toggleGroup = (label) => {
     setExpandedGroups((prev) => {
@@ -49,10 +58,6 @@ export default function DRE() {
       return next;
     });
   };
-
-  // keep old alias so receitas code still works
-  const expandedEntryGroups = expandedGroups;
-  const toggleEntryGroup = toggleGroup;
 
   const { data: rawTransactions = [], isLoading } = useQuery({
     queryKey: ["transactions"],
@@ -78,28 +83,20 @@ export default function DRE() {
   const dreData = useMemo(() => {
     const year = parseInt(selectedYear);
 
-    // ── DADOS DO FATURAMENTO MENSAL (MonthlyBilling) — regime de competência
-    // Filtra pelo ano e unidade selecionados
+    // ── DADOS DO FATURAMENTO MENSAL (MonthlyBilling) — para substituição pontual
     const filteredBillings = monthlyBillings.filter((b) => {
       if (b.year !== year) return false;
       if (selectedUnit !== "all" && b.cost_center !== selectedUnit) return false;
       return true;
     });
 
-    // Agrega por mês: faturamento bruto, comissões e salários de competência
-    const billingRevenue = Array(12).fill(0);    // faturamento bruto
-    const billingCommissions = Array(12).fill(0); // comissões de competência
-    const billingTaxes = Array(12).fill(0);       // impostos de competência
-    const billingSalaries = Array(12).fill(0);    // salários de competência
+    const billingRevenue = Array(12).fill(0);
     filteredBillings.forEach((b) => {
-      const m = (b.month || 1) - 1; // 1-12 → 0-11
+      const m = (b.month || 1) - 1;
       billingRevenue[m] += b.gross_revenue || 0;
-      billingCommissions[m] += b.commissions || 0;
-      billingTaxes[m] += b.taxes || 0;
-      billingSalaries[m] += b.salaries || 0;
     });
 
-    // Categorias marcadas como "Não DRE" (transferências entre contas) — excluir do DRE
+    // Categorias marcadas como "Não DRE" — excluir do DRE
     const naoDreCats = new Set(
       categories.filter((c) => c.dre_group === "Não DRE").map((c) => c.name)
     );
@@ -108,7 +105,6 @@ export default function DRE() {
       if (!t.date || t.status === "cancelado") return false;
       if (new Date(t.date).getFullYear() !== year) return false;
       if (selectedUnit !== "all" && t.cost_center !== selectedUnit) return false;
-      // Excluir transferências entre contas (Não DRE)
       if (naoDreCats.has(t.category)) return false;
       return true;
     });
@@ -116,7 +112,6 @@ export default function DRE() {
     // Build DRE groups from categories
     const entryGroups = {};
     const exitGroups = {};
-
     categories.forEach((c) => {
       if (c.type === "entrada" && c.dre_group) {
         if (!entryGroups[c.dre_group]) entryGroups[c.dre_group] = [];
@@ -128,113 +123,67 @@ export default function DRE() {
       }
     });
 
-    // Quando há dados de billing em competência, apenas as categorias que representam
-    // Simples Nacional/impostos de competência, comissões de profissionais e salários/encargos
-    // são substituídas pelos valores do MonthlyBilling — evitando dupla contagem.
-    // As demais categorias (outras despesas financeiras, custos variáveis, etc.) continuam normalmente.
-    //
-    // Palavras-chave para identificar categorias de impostos de competência (Simples Nacional, DAS, ISS…)
-    const BILLING_TAX_KEYWORDS = ["simples nacional", "das", "iss", "irpj", "csll", "imposto", "tributo", "cofins", "pis"];
-    // Palavras-chave para comissões de profissionais
-    const BILLING_COMMISSION_KEYWORDS = ["comissão", "comissoes", "comissões"];
-    // Palavras-chave para salários e encargos
-    const BILLING_SALARY_KEYWORDS = ["salário", "salarios", "salários", "pro-labore", "pró-labore", "prolabore", "encargo", "fgts", "inss", "férias", "13º", "rescisão"];
-
-    const isBillingCoveredCategory = (categoryName) => {
-      if (!categoryName) return false;
-      const lower = categoryName.toLowerCase();
-      return (
-        BILLING_TAX_KEYWORDS.some((kw) => lower.includes(kw)) ||
-        BILLING_COMMISSION_KEYWORDS.some((kw) => lower.includes(kw)) ||
-        BILLING_SALARY_KEYWORDS.some((kw) => lower.includes(kw))
-      );
-    };
-
-    const getMonthlyTotals = (filterFn, excludeBillingCovered = false) => {
+    // Sempre regime de caixa (usa t.date)
+    const getMonthlyTotals = (filterFn) => {
       const totals = Array(12).fill(0);
       yearTxns.filter(filterFn).forEach((t) => {
-        // Se billing está ativo e esta categoria específica é coberta pelo billing, ignora
-        if (excludeBillingCovered && isBillingCoveredCategory(t.category)) return;
-        // Em modo competência: usa competence_date se disponível, senão fallback para date
-        const refDate = dreMode === "competencia" && t.competence_date
-          ? t.competence_date
-          : t.date;
-        const d = new Date(refDate);
-        // Só conta se a data de competência cair dentro do ano selecionado
+        const d = new Date(t.date);
         if (d.getFullYear() !== year) return;
-        const m = d.getMonth();
-        totals[m] += t.amount || 0;
+        totals[d.getMonth()] += t.amount || 0;
       });
       return totals;
     };
 
-    const makeRow = (group, cats) => ({
-      label: group,
-      monthly: getMonthlyTotals((t) => t.type === (cats[0] ? categories.find(c => c.name === cats[0])?.type : "saida") && cats.includes(t.category)),
-      isGroup: true,
-      subRows: [...new Set(cats)].map((cat) => ({
-        label: cat,
-        monthly: getMonthlyTotals((t) => t.category === cat),
-      })).filter((sr) => sr.monthly.some((v) => v > 0)),
+    // ── RECEITAS OPERACIONAIS (regime de caixa)
+    // Para meses em que useBillingMonths está ativo, substitui o valor pelo Faturamento Mensal
+    const opRevenueGroups = ["Recebimentos de Vendas", "Receitas Financeiras"];
+
+    const cashEntryMonthly = Array(12).fill(0);
+    opRevenueGroups.forEach((g) => {
+      if (!entryGroups[g]) return;
+      getMonthlyTotals((t) => t.type === "entrada" && (entryGroups[g] || []).includes(t.category))
+        .forEach((v, i) => (cashEntryMonthly[i] += v));
     });
 
-    // ── RECEITAS OPERACIONAIS (excluir Não DRE e Outras Receitas)
-    const hasBillingData = filteredBillings.length > 0 && dreMode === "competencia";
+    // Entradas não mapeadas
+    const knownEntryGroups = [...opRevenueGroups, "Não DRE", ...OUTRAS_RECEITAS_GROUPS];
+    const knownEntryCats = knownEntryGroups.flatMap((g) => entryGroups[g] || []);
+    getMonthlyTotals((t) => t.type === "entrada" && !knownEntryCats.includes(t.category))
+      .forEach((v, i) => (cashEntryMonthly[i] += v));
 
-    const opRevenueGroups = ["Recebimentos de Vendas", "Receitas Financeiras"];
-    let entryRows;
+    // Monta linha de receita: mês a mês decide caixa ou faturamento
+    const revenueMonthly = cashEntryMonthly.map((cashVal, i) =>
+      useBillingMonths.has(i) && billingRevenue[i] > 0 ? billingRevenue[i] : cashVal
+    );
 
-    if (hasBillingData) {
-      // Usa os dados do Faturamento Mensal como receita de competência
-      // Detalha por unidade se disponível
-      const unitBreakdown = {};
-      filteredBillings.forEach((b) => {
-        const m = (b.month || 1) - 1;
-        if (!unitBreakdown[b.cost_center]) unitBreakdown[b.cost_center] = Array(12).fill(0);
-        unitBreakdown[b.cost_center][m] += b.gross_revenue || 0;
-      });
-      const subRows = Object.entries(unitBreakdown).map(([unit, monthly]) => ({
-        label: unit,
-        monthly,
-      }));
-      entryRows = [{
-        label: "Faturamento Bruto (Competência)",
-        monthly: billingRevenue,
+    // subRows por grupo de receita (regime caixa, sempre)
+    const entrySubRows = opRevenueGroups
+      .filter((g) => entryGroups[g])
+      .map((g) => ({
+        label: g,
+        monthly: getMonthlyTotals((t) => t.type === "entrada" && (entryGroups[g] || []).includes(t.category)),
         isGroup: true,
-        subRows: subRows.length > 1 ? subRows : [],
-      }];
-    } else {
-      entryRows = opRevenueGroups
-        .filter((g) => entryGroups[g])
-        .map((g) => ({
-          label: g,
-          monthly: getMonthlyTotals((t) => t.type === "entrada" && (entryGroups[g] || []).includes(t.category)),
-          isGroup: true,
-          subRows: [...new Set(entryGroups[g] || [])].map((cat) => ({
-            label: cat,
-            monthly: getMonthlyTotals((t) => t.type === "entrada" && t.category === cat),
-          })).filter((sr) => sr.monthly.some((v) => v > 0)),
-        }));
+        subRows: [...new Set(entryGroups[g] || [])].map((cat) => ({
+          label: cat,
+          monthly: getMonthlyTotals((t) => t.type === "entrada" && t.category === cat),
+        })).filter((sr) => sr.monthly.some((v) => v > 0)),
+      }));
 
-      // Entradas não mapeadas nos grupos operacionais
-      const knownEntryGroups = [...opRevenueGroups, "Não DRE", ...OUTRAS_RECEITAS_GROUPS];
-      const knownEntryCats = knownEntryGroups.flatMap((g) => entryGroups[g] || []);
-      const ungroupedEntries = getMonthlyTotals(
-        (t) => t.type === "entrada" && !knownEntryCats.includes(t.category)
-      );
-      if (ungroupedEntries.some((v) => v > 0)) {
-        entryRows.push({ label: "Outras Entradas", monthly: ungroupedEntries, isGroup: true, subRows: [] });
-      }
-    }
+    const entryRows = [
+      {
+        label: "Recebimentos de Vendas",
+        monthly: revenueMonthly,
+        isGroup: true,
+        subRows: entrySubRows.flatMap((r) => r.subRows),
+        isBillingRow: true, // flag para renderizar botões de toggle
+        billingRevenue,
+        cashMonthly: cashEntryMonthly,
+      },
+    ];
 
-    const totalEntradas = Array(12).fill(0);
-    if (hasBillingData) {
-      billingRevenue.forEach((v, i) => (totalEntradas[i] = v));
-    } else {
-      entryRows.forEach((r) => r.monthly.forEach((v, i) => (totalEntradas[i] += v)));
-    }
+    const totalEntradas = revenueMonthly.slice();
 
-    // ── OUTRAS RECEITAS (aportes, empréstimos, etc.) — sempre via transações
+    // ── OUTRAS RECEITAS
     const outrasReceitasRows = OUTRAS_RECEITAS_GROUPS
       .filter((g) => entryGroups[g])
       .map((g) => ({
@@ -255,83 +204,47 @@ export default function DRE() {
       .filter((g) => exitGroups[g])
       .map((g) => ({
         label: g,
-        monthly: getMonthlyTotals((t) => t.type === "saida" && (exitGroups[g] || []).includes(t.category), hasBillingData),
+        monthly: getMonthlyTotals((t) => t.type === "saida" && (exitGroups[g] || []).includes(t.category)),
         isGroup: true,
         subRows: [...new Set(exitGroups[g] || [])].map((cat) => ({
           label: cat,
-          monthly: getMonthlyTotals((t) => t.type === "saida" && t.category === cat, hasBillingData),
+          monthly: getMonthlyTotals((t) => t.type === "saida" && t.category === cat),
         })).filter((sr) => sr.monthly.some((v) => v > 0)),
       }));
 
-    // saídas não mapeadas que não são abaixo da linha (e não são Não DRE, já filtrado acima)
     const allKnownExitGroups = [...CUSTOS_VARIAVEIS_GROUPS, ...GASTOS_FIXOS_ORDER, ...ABAIXO_DA_LINHA_GROUPS, "Não DRE"];
     const allKnownExitCats = allKnownExitGroups.flatMap((g) => exitGroups[g] || []);
     const ungroupedExits = getMonthlyTotals(
-      (t) => t.type === "saida" && !allKnownExitCats.includes(t.category),
-      hasBillingData
+      (t) => t.type === "saida" && !allKnownExitCats.includes(t.category)
     );
     if (ungroupedExits.some((v) => v > 0)) {
       variableRows.push({ label: "Outras Despesas Variáveis", monthly: ungroupedExits, isGroup: true, subRows: [] });
     }
 
-    // Se houver dados de MonthlyBilling em modo competência, adicionar comissões e impostos como custos variáveis
-    if (hasBillingData) {
-      const hasCommissions = billingCommissions.some((v) => v > 0);
-      const hasTaxes = billingTaxes.some((v) => v > 0);
-      const hasSalaries = billingSalaries.some((v) => v > 0);
-      if (hasCommissions) {
-        variableRows.push({
-          label: "Comissões (competência)",
-          monthly: billingCommissions,
-          isGroup: true,
-          subRows: [],
-        });
-      }
-      if (hasTaxes) {
-        variableRows.push({
-          label: "Impostos (competência)",
-          monthly: billingTaxes,
-          isGroup: true,
-          subRows: [],
-        });
-      }
-      if (hasSalaries) {
-        variableRows.push({
-          label: "Salários e Encargos (competência)",
-          monthly: billingSalaries,
-          isGroup: true,
-          subRows: [],
-        });
-      }
-    }
-
     const totalVariaveis = Array(12).fill(0);
     variableRows.forEach((r) => r.monthly.forEach((v, i) => (totalVariaveis[i] += v)));
 
-    // Margem de contribuição = Receitas Operacionais - Custos Variáveis
     const margemContribuicao = totalEntradas.map((v, i) => v - totalVariaveis[i]);
     const margemContribuicaoPct = totalEntradas.map((v, i) =>
       v > 0 ? (margemContribuicao[i] / v) * 100 : 0
     );
 
-    // ── GASTOS FIXOS (ordenados)
+    // ── GASTOS FIXOS
     const fixedRows = GASTOS_FIXOS_ORDER
       .filter((g) => exitGroups[g])
       .map((g) => ({
         label: g,
-        monthly: getMonthlyTotals((t) => t.type === "saida" && (exitGroups[g] || []).includes(t.category), hasBillingData),
+        monthly: getMonthlyTotals((t) => t.type === "saida" && (exitGroups[g] || []).includes(t.category)),
         isGroup: true,
         subRows: [...new Set(exitGroups[g] || [])].map((cat) => ({
           label: cat,
-          monthly: getMonthlyTotals((t) => t.type === "saida" && t.category === cat, hasBillingData),
+          monthly: getMonthlyTotals((t) => t.type === "saida" && t.category === cat),
         })).filter((sr) => sr.monthly.some((v) => v > 0)),
       }));
 
     const totalFixos = Array(12).fill(0);
     fixedRows.forEach((r) => r.monthly.forEach((v, i) => (totalFixos[i] += v)));
 
-    // Resultado Operacional (LAJIR) = Margem de Contribuição - Gastos Fixos
-    // Nota: EBITDA real requer D&A que não é rastreado. Este é o Resultado Operacional (LAJIR).
     const ebitda = margemContribuicao.map((v, i) => v - totalFixos[i]);
     const ebitdaPct = totalEntradas.map((v, i) => v > 0 ? (ebitda[i] / v) * 100 : 0);
 
@@ -351,13 +264,11 @@ export default function DRE() {
     const totalAbaixoLinha = Array(12).fill(0);
     abaixoLinhaRows.forEach((r) => r.monthly.forEach((v, i) => (totalAbaixoLinha[i] += v)));
 
-    // Resultado operacional = EBITDA (sem abaixo da linha)
     const resultado = ebitda;
     const margemLiquida = totalEntradas.map((v, i) =>
       v > 0 ? (resultado[i] / v) * 100 : 0
     );
 
-    // Saldo final = resultado + outras receitas - abaixo da linha
     const saldoFinal = resultado.map((v, i) => v + totalOutrasReceitas[i] - totalAbaixoLinha[i]);
 
     const totalSaidas = Array(12).fill(0);
@@ -382,8 +293,10 @@ export default function DRE() {
       resultado,
       margemLiquida,
       saldoFinal,
+      billingRevenue,
+      hasBillingData: filteredBillings.length > 0,
     };
-  }, [transactions, categories, monthlyBillings, selectedYear, selectedUnit, dreMode]);
+  }, [transactions, categories, monthlyBillings, selectedYear, selectedUnit, useBillingMonths]);
 
   const years = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
 
@@ -407,6 +320,7 @@ export default function DRE() {
     const hasSubRows = row.subRows && row.subRows.length > 0;
     const visibleValues = visibleMonths.map(({ idx }) => row.monthly[idx] || 0);
     const total = visibleValues.reduce((s, v) => s + v, 0);
+
     return (
       <React.Fragment>
         <tr
@@ -423,11 +337,37 @@ export default function DRE() {
               ↳ {row.label}
             </span>
           </td>
-          {visibleValues.map((v, i) => (
-            <td key={i} className={`px-3 py-2.5 text-sm text-right whitespace-nowrap ${negative && v > 0 ? "text-destructive" : ""}`}>
-              {formatCurrency(negative ? -v : v)}
-            </td>
-          ))}
+          {visibleMonths.map(({ idx }, i) => {
+            const v = row.monthly[idx] || 0;
+            if (row.isBillingRow && dreData.hasBillingData) {
+              const usingBilling = useBillingMonths.has(idx);
+              const hasBillingVal = (row.billingRevenue?.[idx] || 0) > 0;
+              return (
+                <td key={idx} className="px-2 py-1.5 text-sm text-right whitespace-nowrap">
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="font-medium">{formatCurrency(v)}</span>
+                    {hasBillingVal && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleBillingMonth(idx); }}
+                        className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
+                          usingBilling
+                            ? "bg-primary/15 border-primary/40 text-primary font-semibold"
+                            : "bg-muted border-border text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                        }`}
+                      >
+                        {usingBilling ? "✓ Fat." : "Fat. →"}
+                      </button>
+                    )}
+                  </div>
+                </td>
+              );
+            }
+            return (
+              <td key={idx} className={`px-3 py-2.5 text-sm text-right whitespace-nowrap ${negative && v > 0 ? "text-destructive" : ""}`}>
+                {formatCurrency(negative ? -v : v)}
+              </td>
+            );
+          })}
           {selectedMonth === "all" && (
             <td className={`px-3 py-2.5 text-sm text-right font-semibold whitespace-nowrap border-l ${negative && total > 0 ? "text-destructive" : ""}`}>
               {formatCurrency(negative ? -total : total)}
@@ -557,31 +497,14 @@ export default function DRE() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">DRE Gerencial</h1>
           <p className="text-sm text-muted-foreground">
-            Demonstração de Resultado do Exercício
-            {selectedUnit !== "all" ? ` — ${selectedUnit}` : " — Todas as Unidades"}
-            {" · "}
-            <span className="font-medium text-primary">
-              {dreMode === "competencia" ? "Regime de Competência" : "Regime de Caixa"}
-            </span>
+            Demonstração de Resultado do Exercício — Regime de Caixa
+            {selectedUnit !== "all" ? ` · ${selectedUnit}` : " · Todas as Unidades"}
+            {dreData.hasBillingData && (
+              <span className="ml-2 text-primary font-medium">· Faturamento disponível (clique em "Fat. →" por mês)</span>
+            )}
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {/* Toggle Competência / Caixa */}
-          <div className="flex rounded-lg border border-border overflow-hidden text-sm">
-            <button
-              onClick={() => setDreMode("competencia")}
-              className={`px-3 py-1.5 font-medium transition-colors ${dreMode === "competencia" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
-            >
-              Competência
-            </button>
-            <button
-              onClick={() => setDreMode("caixa")}
-              className={`px-3 py-1.5 font-medium transition-colors ${dreMode === "caixa" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
-            >
-              Caixa
-            </button>
-          </div>
-
           {/* Filtro Unidade */}
           <Select value={selectedUnit} onValueChange={setSelectedUnit}>
             <SelectTrigger className="w-44">
@@ -625,7 +548,7 @@ export default function DRE() {
       {/* Análise IA */}
       <AIFinancialAnalysis
         label="DRE Gerencial"
-        context={`Ano: ${selectedYear}. Unidade: ${selectedUnit === "all" ? "Todas" : selectedUnit}. Mês filtrado: ${selectedMonth === "all" ? "Ano completo" : MONTHS_PT[parseInt(selectedMonth)]}.`}
+        context={`Ano: ${selectedYear}. Unidade: ${selectedUnit === "all" ? "Todas" : selectedUnit}. Mês filtrado: ${selectedMonth === "all" ? "Ano completo" : MONTHS_PT[parseInt(selectedMonth)]}. Regime: Caixa (com possibilidade de substituição pontual pelo Faturamento Mensal em meses selecionados).`}
         data={{
           totalReceitasOperacionais: dreData.totalEntradas,
           totalOutrasReceitas: dreData.totalOutrasReceitas,

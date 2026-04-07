@@ -128,9 +128,19 @@ export default function DRE() {
       }
     });
 
-    const getMonthlyTotals = (filterFn) => {
+    // Quando há dados de billing em competência, as categorias ligadas a comissões,
+    // impostos e salários já são cobertas pelo MonthlyBilling — excluir do caixa para evitar dupla contagem.
+    // Grupos cujas categorias de caixa devem ser excluídas quando hasBillingData está ativo:
+    const BILLING_COVERED_GROUPS = ["Impostos e Financeiros", "Despesas Tributárias", "Despesas com Pessoal", "Custos Variáveis", "Despesas Variáveis"];
+
+    const getMonthlyTotals = (filterFn, excludeBillingCovered = false) => {
       const totals = Array(12).fill(0);
       yearTxns.filter(filterFn).forEach((t) => {
+        // Se billing está ativo e esta transação pertence a grupo coberto pelo billing, ignora
+        if (excludeBillingCovered) {
+          const cat = categories.find((c) => c.name === t.category);
+          if (cat && BILLING_COVERED_GROUPS.includes(cat.dre_group)) return;
+        }
         // Em modo competência: usa competence_date se disponível, senão fallback para date
         const refDate = dreMode === "competencia" && t.competence_date
           ? t.competence_date
@@ -231,11 +241,11 @@ export default function DRE() {
       .filter((g) => exitGroups[g])
       .map((g) => ({
         label: g,
-        monthly: getMonthlyTotals((t) => t.type === "saida" && (exitGroups[g] || []).includes(t.category)),
+        monthly: getMonthlyTotals((t) => t.type === "saida" && (exitGroups[g] || []).includes(t.category), hasBillingData),
         isGroup: true,
         subRows: [...new Set(exitGroups[g] || [])].map((cat) => ({
           label: cat,
-          monthly: getMonthlyTotals((t) => t.type === "saida" && t.category === cat),
+          monthly: getMonthlyTotals((t) => t.type === "saida" && t.category === cat, hasBillingData),
         })).filter((sr) => sr.monthly.some((v) => v > 0)),
       }));
 
@@ -243,7 +253,8 @@ export default function DRE() {
     const allKnownExitGroups = [...CUSTOS_VARIAVEIS_GROUPS, ...GASTOS_FIXOS_ORDER, ...ABAIXO_DA_LINHA_GROUPS, "Não DRE"];
     const allKnownExitCats = allKnownExitGroups.flatMap((g) => exitGroups[g] || []);
     const ungroupedExits = getMonthlyTotals(
-      (t) => t.type === "saida" && !allKnownExitCats.includes(t.category)
+      (t) => t.type === "saida" && !allKnownExitCats.includes(t.category),
+      hasBillingData
     );
     if (ungroupedExits.some((v) => v > 0)) {
       variableRows.push({ label: "Outras Despesas Variáveis", monthly: ungroupedExits, isGroup: true, subRows: [] });
@@ -294,11 +305,11 @@ export default function DRE() {
       .filter((g) => exitGroups[g])
       .map((g) => ({
         label: g,
-        monthly: getMonthlyTotals((t) => t.type === "saida" && (exitGroups[g] || []).includes(t.category)),
+        monthly: getMonthlyTotals((t) => t.type === "saida" && (exitGroups[g] || []).includes(t.category), hasBillingData),
         isGroup: true,
         subRows: [...new Set(exitGroups[g] || [])].map((cat) => ({
           label: cat,
-          monthly: getMonthlyTotals((t) => t.type === "saida" && t.category === cat),
+          monthly: getMonthlyTotals((t) => t.type === "saida" && t.category === cat, hasBillingData),
         })).filter((sr) => sr.monthly.some((v) => v > 0)),
       }));
 

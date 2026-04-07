@@ -128,19 +128,33 @@ export default function DRE() {
       }
     });
 
-    // Quando há dados de billing em competência, as categorias ligadas a comissões,
-    // impostos e salários já são cobertas pelo MonthlyBilling — excluir do caixa para evitar dupla contagem.
-    // Grupos cujas categorias de caixa devem ser excluídas quando hasBillingData está ativo:
-    const BILLING_COVERED_GROUPS = ["Impostos e Financeiros", "Despesas Tributárias", "Despesas com Pessoal", "Custos Variáveis", "Despesas Variáveis"];
+    // Quando há dados de billing em competência, apenas as categorias que representam
+    // Simples Nacional/impostos de competência, comissões de profissionais e salários/encargos
+    // são substituídas pelos valores do MonthlyBilling — evitando dupla contagem.
+    // As demais categorias (outras despesas financeiras, custos variáveis, etc.) continuam normalmente.
+    //
+    // Palavras-chave para identificar categorias de impostos de competência (Simples Nacional, DAS, ISS…)
+    const BILLING_TAX_KEYWORDS = ["simples nacional", "das", "iss", "irpj", "csll", "imposto", "tributo", "cofins", "pis"];
+    // Palavras-chave para comissões de profissionais
+    const BILLING_COMMISSION_KEYWORDS = ["comissão", "comissoes", "comissões"];
+    // Palavras-chave para salários e encargos
+    const BILLING_SALARY_KEYWORDS = ["salário", "salarios", "salários", "pro-labore", "pró-labore", "prolabore", "encargo", "fgts", "inss", "férias", "13º", "rescisão"];
+
+    const isBillingCoveredCategory = (categoryName) => {
+      if (!categoryName) return false;
+      const lower = categoryName.toLowerCase();
+      return (
+        BILLING_TAX_KEYWORDS.some((kw) => lower.includes(kw)) ||
+        BILLING_COMMISSION_KEYWORDS.some((kw) => lower.includes(kw)) ||
+        BILLING_SALARY_KEYWORDS.some((kw) => lower.includes(kw))
+      );
+    };
 
     const getMonthlyTotals = (filterFn, excludeBillingCovered = false) => {
       const totals = Array(12).fill(0);
       yearTxns.filter(filterFn).forEach((t) => {
-        // Se billing está ativo e esta transação pertence a grupo coberto pelo billing, ignora
-        if (excludeBillingCovered) {
-          const cat = categories.find((c) => c.name === t.category);
-          if (cat && BILLING_COVERED_GROUPS.includes(cat.dre_group)) return;
-        }
+        // Se billing está ativo e esta categoria específica é coberta pelo billing, ignora
+        if (excludeBillingCovered && isBillingCoveredCategory(t.category)) return;
         // Em modo competência: usa competence_date se disponível, senão fallback para date
         const refDate = dreMode === "competencia" && t.competence_date
           ? t.competence_date

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import AIFinancialAnalysis from "@/components/analysis/AIFinancialAnalysis";
+import DrillDownModal from "@/components/shared/DrillDownModal";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,6 +47,7 @@ export default function FluxoCaixa() {
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedUnit, setSelectedUnit] = useState("all");
   const [expandedMonths, setExpandedMonths] = useState(new Set());
+  const [drillDown, setDrillDown] = useState(null);
 
   const toggleMonth = (month) => {
     setExpandedMonths((prev) => {
@@ -125,7 +127,27 @@ export default function FluxoCaixa() {
         saidaCats[groupKey].cats[catName] = (saidaCats[groupKey].cats[catName] || 0) + (t.amount || 0);
       });
 
-      return { month, idx, entradas, saidas, saldo, geracaoCaixa: saldo, acumulado: saldoAcumulado, entradaCats, saidaCats };
+      // Raw transactions por categoria para drill-down
+      const entradaTxns = {};
+      monthTxns.filter((t) => t.type === "entrada").forEach((t) => {
+        const catObj = categories.find((c) => c.name === t.category && c.type === "entrada");
+        const groupKey = catObj?.dre_group || t.category || "Sem categoria";
+        if (!entradaTxns[groupKey]) entradaTxns[groupKey] = {};
+        const catName = t.category || "Sem categoria";
+        if (!entradaTxns[groupKey][catName]) entradaTxns[groupKey][catName] = [];
+        entradaTxns[groupKey][catName].push(t);
+      });
+      const saidaTxns = {};
+      monthTxns.filter((t) => t.type === "saida").forEach((t) => {
+        const catObj = categories.find((c) => c.name === t.category && c.type === "saida");
+        const groupKey = catObj?.dre_group || t.category || "Sem categoria";
+        if (!saidaTxns[groupKey]) saidaTxns[groupKey] = {};
+        const catName = t.category || "Sem categoria";
+        if (!saidaTxns[groupKey][catName]) saidaTxns[groupKey][catName] = [];
+        saidaTxns[groupKey][catName].push(t);
+      });
+
+      return { month, idx, entradas, saidas, saldo, geracaoCaixa: saldo, acumulado: saldoAcumulado, entradaCats, saidaCats, entradaTxns, saidaTxns, monthTxns };
     });
   }, [transactions, selectedYear, categories]);
 
@@ -152,6 +174,12 @@ export default function FluxoCaixa() {
 
   return (
     <div className="space-y-6">
+      <DrillDownModal
+        open={!!drillDown}
+        onClose={() => setDrillDown(null)}
+        title={drillDown?.title || ""}
+        transactions={drillDown?.transactions || []}
+      />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Fluxo de Caixa</h1>
@@ -348,8 +376,14 @@ export default function FluxoCaixa() {
                             {row.month}
                           </span>
                         </td>
-                        <td className="px-4 py-2.5 text-right text-success">{formatCurrency(row.entradas)}</td>
-                        <td className="px-4 py-2.5 text-right text-destructive">{formatCurrency(row.saidas)}</td>
+                        <td
+                          className="px-4 py-2.5 text-right text-success cursor-pointer hover:underline hover:opacity-80"
+                          onClick={(e) => { e.stopPropagation(); setDrillDown({ title: `Entradas — ${row.month}`, transactions: row.monthTxns.filter(t => t.type === "entrada") }); }}
+                        >{formatCurrency(row.entradas)}</td>
+                        <td
+                          className="px-4 py-2.5 text-right text-destructive cursor-pointer hover:underline hover:opacity-80"
+                          onClick={(e) => { e.stopPropagation(); setDrillDown({ title: `Saídas — ${row.month}`, transactions: row.monthTxns.filter(t => t.type === "saida") }); }}
+                        >{formatCurrency(row.saidas)}</td>
                         <td className={`px-4 py-2.5 text-right font-medium ${row.saldo >= 0 ? "text-success" : "text-destructive"}`}>
                           {formatCurrency(row.saldo)}
                         </td>
@@ -380,14 +414,21 @@ export default function FluxoCaixa() {
                                   .sort((a, b) => b[1].total - a[1].total)
                                   .map(([group, data]) => (
                                     <div key={group} className="space-y-0.5">
-                                      <div className="flex items-center justify-between gap-3 py-1 px-2 rounded bg-success/5">
+                                      <div
+                                        className="flex items-center justify-between gap-3 py-1 px-2 rounded bg-success/5 cursor-pointer hover:bg-success/10 transition-colors"
+                                        onClick={() => setDrillDown({ title: `Entradas — ${group} — ${row.month}`, transactions: Object.values(row.entradaTxns[group] || {}).flat() })}
+                                      >
                                         <span className="text-xs font-semibold text-success/90 truncate">{group}</span>
                                         <span className="text-xs font-bold text-success shrink-0">{formatCurrency(data.total)}</span>
                                       </div>
                                       {Object.entries(data.cats)
                                         .sort((a, b) => b[1] - a[1])
                                         .map(([cat, val]) => (
-                                          <div key={cat} className="flex items-center justify-between gap-3 py-0.5 pl-6 pr-2 rounded hover:bg-muted/30 transition-colors">
+                                          <div
+                                            key={cat}
+                                            className="flex items-center justify-between gap-3 py-0.5 pl-6 pr-2 rounded hover:bg-muted/30 transition-colors cursor-pointer"
+                                            onClick={() => setDrillDown({ title: `${cat} — ${row.month}`, transactions: row.entradaTxns[group]?.[cat] || [] })}
+                                          >
                                             <span className="text-xs text-muted-foreground truncate">• {cat}</span>
                                             <span className="text-xs font-medium text-success/80 shrink-0">{formatCurrency(val)}</span>
                                           </div>
@@ -408,14 +449,21 @@ export default function FluxoCaixa() {
                                   .sort((a, b) => b[1].total - a[1].total)
                                   .map(([group, data]) => (
                                     <div key={group} className="space-y-0.5">
-                                      <div className="flex items-center justify-between gap-3 py-1 px-2 rounded bg-destructive/5">
+                                      <div
+                                        className="flex items-center justify-between gap-3 py-1 px-2 rounded bg-destructive/5 cursor-pointer hover:bg-destructive/10 transition-colors"
+                                        onClick={() => setDrillDown({ title: `Saídas — ${group} — ${row.month}`, transactions: Object.values(row.saidaTxns[group] || {}).flat() })}
+                                      >
                                         <span className="text-xs font-semibold text-destructive/90 truncate">{group}</span>
                                         <span className="text-xs font-bold text-destructive shrink-0">{formatCurrency(data.total)}</span>
                                       </div>
                                       {Object.entries(data.cats)
                                         .sort((a, b) => b[1] - a[1])
                                         .map(([cat, val]) => (
-                                          <div key={cat} className="flex items-center justify-between gap-3 py-0.5 pl-6 pr-2 rounded hover:bg-muted/30 transition-colors">
+                                          <div
+                                            key={cat}
+                                            className="flex items-center justify-between gap-3 py-0.5 pl-6 pr-2 rounded hover:bg-muted/30 transition-colors cursor-pointer"
+                                            onClick={() => setDrillDown({ title: `${cat} — ${row.month}`, transactions: row.saidaTxns[group]?.[cat] || [] })}
+                                          >
                                             <span className="text-xs text-muted-foreground truncate">• {cat}</span>
                                             <span className="text-xs font-medium text-destructive/80 shrink-0">{formatCurrency(val)}</span>
                                           </div>

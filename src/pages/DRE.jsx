@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants";
 import DREGoalsAnalysis from "@/components/dre/DREGoalsAnalysis";
+import DrillDownModal from "@/components/shared/DrillDownModal";
 
 // Grupos que compõem os Custos Variáveis (para margem de contribuição)
 const CUSTOS_VARIAVEIS_GROUPS = ["Impostos e Financeiros", "Despesas Variáveis", "Custos Variáveis"];
@@ -40,6 +41,8 @@ export default function DRE() {
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedUnit, setSelectedUnit] = useState("all");
   const [expandedGroups, setExpandedGroups] = useState(new Set());
+  const [drillDown, setDrillDown] = useState(null); // { title, transactions }
+
   const toggleGroup = (label) => {
     setExpandedGroups((prev) => {
       const next = new Set(prev);
@@ -235,6 +238,9 @@ export default function DRE() {
     const totalSaidas = Array(12).fill(0);
     [...variableRows, ...fixedRows, ...abaixoLinhaRows].forEach((r) => r.monthly.forEach((v, i) => (totalSaidas[i] += v)));
 
+    // Helper para buscar transações de uma categoria num mês específico
+    const getTxnsForCatMonth = (filterFn) => yearTxns.filter(filterFn);
+
     return {
       entryRows,
       outrasReceitasRows,
@@ -254,6 +260,7 @@ export default function DRE() {
       resultado,
       margemLiquida,
       saldoFinal,
+      yearTxns,
     };
   }, [transactions, categories, selectedYear, selectedUnit]);
 
@@ -273,6 +280,11 @@ export default function DRE() {
       </div>
     );
   }
+
+  const openDrill = (label, filterFn) => {
+    const txns = dreData.yearTxns.filter(filterFn);
+    setDrillDown({ title: label, transactions: txns });
+  };
 
   const DrillRow = ({ row, negative }) => {
     const isExpanded = expandedGroups.has(row.label);
@@ -299,13 +311,34 @@ export default function DRE() {
           {visibleMonths.map(({ idx }) => {
             const v = row.monthly[idx] || 0;
             return (
-              <td key={idx} className={`px-3 py-2.5 text-sm text-right whitespace-nowrap ${negative && v > 0 ? "text-destructive" : ""}`}>
+              <td
+                key={idx}
+                className={`px-3 py-2.5 text-sm text-right whitespace-nowrap ${negative && v > 0 ? "text-destructive" : ""} ${v !== 0 ? "cursor-pointer hover:underline hover:opacity-80" : ""}`}
+                onClick={(e) => {
+                  if (v === 0) return;
+                  e.stopPropagation();
+                  openDrill(
+                    `${row.label} — ${MONTHS_PT[idx]}`,
+                    (t) => {
+                      const d = new Date(t.date);
+                      return d.getMonth() === idx && t.category === row.label;
+                    }
+                  );
+                }}
+              >
                 {formatCurrency(negative ? -v : v)}
               </td>
             );
           })}
           {selectedMonth === "all" && (
-            <td className={`px-3 py-2.5 text-sm text-right font-semibold whitespace-nowrap border-l ${negative && total > 0 ? "text-destructive" : ""}`}>
+            <td
+              className={`px-3 py-2.5 text-sm text-right font-semibold whitespace-nowrap border-l ${negative && total > 0 ? "text-destructive" : ""} ${total !== 0 ? "cursor-pointer hover:underline hover:opacity-80" : ""}`}
+              onClick={(e) => {
+                if (total === 0) return;
+                e.stopPropagation();
+                openDrill(row.label, (t) => t.category === row.label);
+              }}
+            >
               {formatCurrency(negative ? -total : total)}
             </td>
           )}
@@ -319,13 +352,35 @@ export default function DRE() {
               <td className="px-4 py-2 text-xs whitespace-nowrap sticky left-0 bg-card z-10 border-r pl-16 text-muted-foreground">
                 • {sub.label}
               </td>
-              {subVals.map((v, i) => (
-                <td key={i} className={`px-3 py-2 text-xs text-right whitespace-nowrap ${subColor}`}>
-                  {formatCurrency(negative ? -v : v)}
-                </td>
-              ))}
+              {subVals.map((v, i) => {
+                const monthIdx = visibleMonths[i]?.idx;
+                return (
+                  <td
+                    key={i}
+                    className={`px-3 py-2 text-xs text-right whitespace-nowrap ${subColor} ${v !== 0 ? "cursor-pointer hover:underline hover:opacity-80" : ""}`}
+                    onClick={() => {
+                      if (v === 0) return;
+                      openDrill(
+                        `${sub.label} — ${MONTHS_PT[monthIdx]}`,
+                        (t) => {
+                          const d = new Date(t.date);
+                          return d.getMonth() === monthIdx && t.category === sub.label;
+                        }
+                      );
+                    }}
+                  >
+                    {formatCurrency(negative ? -v : v)}
+                  </td>
+                );
+              })}
               {selectedMonth === "all" && (
-                <td className={`px-3 py-2 text-xs text-right font-semibold whitespace-nowrap border-l ${subColor}`}>
+                <td
+                  className={`px-3 py-2 text-xs text-right font-semibold whitespace-nowrap border-l ${subColor} ${subTotal !== 0 ? "cursor-pointer hover:underline hover:opacity-80" : ""}`}
+                  onClick={() => {
+                    if (subTotal === 0) return;
+                    openDrill(sub.label, (t) => t.category === sub.label);
+                  }}
+                >
                   {formatCurrency(negative ? -subTotal : subTotal)}
                 </td>
               )}
@@ -428,6 +483,12 @@ export default function DRE() {
 
   return (
     <div className="space-y-6">
+      <DrillDownModal
+        open={!!drillDown}
+        onClose={() => setDrillDown(null)}
+        title={drillDown?.title || ""}
+        transactions={drillDown?.transactions || []}
+      />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

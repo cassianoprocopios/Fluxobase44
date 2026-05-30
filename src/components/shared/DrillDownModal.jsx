@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, MONTHS_PT } from "@/lib/constants";
-import { Pencil, X } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import TransactionForm from "@/components/transactions/TransactionForm";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -12,6 +12,7 @@ import { ptBR } from "date-fns/locale";
 export default function DrillDownModal({ open, onClose, title, transactions }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -34,6 +35,14 @@ export default function DrillDownModal({ open, onClose, title, transactions }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       setEditing(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Transaction.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      setConfirmDelete(null);
     },
   });
 
@@ -87,14 +96,29 @@ export default function DrillDownModal({ open, onClose, title, transactions }) {
                       <span className={`text-sm font-semibold ${t.type === "entrada" ? "text-success" : "text-destructive"}`}>
                         {t.type === "saida" ? "−" : "+"}{formatCurrency(t.amount || 0)}
                       </span>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        onClick={() => setEditing(t)}
-                      >
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(t)}>
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
+                      {confirmDelete === t.id ? (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => deleteMutation.mutate(t.id)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            Confirmar
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setConfirmDelete(null)}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setConfirmDelete(t.id)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}

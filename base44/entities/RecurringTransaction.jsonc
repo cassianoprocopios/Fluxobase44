@@ -1,0 +1,120 @@
+{
+  "name": "RecurringTransaction",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome da conta recorrente (ex: Aluguel, Internet)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "entrada",
+        "saida"
+      ],
+      "description": "Tipo: entrada ou sa\u00edda"
+    },
+    "category": {
+      "type": "string",
+      "description": "Categoria do lan\u00e7amento"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Valor fixo mensal"
+    },
+    "due_day": {
+      "type": "number",
+      "description": "Dia do m\u00eas para vencimento (1-28)"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "pix",
+        "dinheiro",
+        "credito",
+        "debito",
+        "transferencia",
+        "boleto",
+        "outro"
+      ],
+      "description": "Forma de pagamento padr\u00e3o"
+    },
+    "cost_center": {
+      "type": "string",
+      "description": "Centro de custo"
+    },
+    "bank_account": {
+      "type": "string",
+      "description": "Banco ou conta"
+    },
+    "client_supplier": {
+      "type": "string",
+      "description": "Cliente ou fornecedor"
+    },
+    "description": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se a recorr\u00eancia est\u00e1 ativa"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de in\u00edcio da recorr\u00eancia"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de encerramento (opcional)"
+    },
+    "last_generated_month": {
+      "type": "string",
+      "description": "\u00daltimo m\u00eas/ano gerado (YYYY-MM) para controle de duplicidade"
+    }
+  },
+  "required": [
+    "name",
+    "type",
+    "category",
+    "amount",
+    "due_day"
+  ],
+  "rls": {
+    "create": {},
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "gerente"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "gerente"
+          }
+        }
+      ]
+    }
+  }
+}

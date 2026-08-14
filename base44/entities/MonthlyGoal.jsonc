@@ -1,0 +1,66 @@
+{
+  "name": "MonthlyGoal",
+  "type": "object",
+  "properties": {
+    "year": {
+      "type": "number",
+      "description": "Ano"
+    },
+    "month": {
+      "type": "number",
+      "description": "M\u00eas (1-12)"
+    },
+    "target_revenue": {
+      "type": "number",
+      "description": "Meta de faturamento"
+    },
+    "target_result": {
+      "type": "number",
+      "description": "Meta de resultado l\u00edquido"
+    }
+  },
+  "required": [
+    "year",
+    "month"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "gerente"
+          }
+        }
+      ]
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "gerente"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

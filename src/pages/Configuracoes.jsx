@@ -29,6 +29,7 @@ import {
 import { Plus, Trash2, Tag, Building2, Landmark } from "lucide-react";
 import { toast } from "sonner";
 import { DRE_ENTRY_GROUPS, DRE_EXIT_GROUPS } from "@/lib/constants";
+import DataExport from "@/components/configuracoes/DataExport";
 
 export default function Configuracoes() {
   const queryClient = useQueryClient();
@@ -126,6 +127,8 @@ export default function Configuracoes() {
           Gerencie categorias e preferências
         </p>
       </div>
+
+      <DataExport />
 
       {/* Units */}
       <Card>

@@ -10,10 +10,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronRight, ChevronDown, Info } from "lucide-react";
 import { formatCurrency, MONTHS_PT, normalizeTransaction } from "@/lib/constants";
 import DREGoalsAnalysis from "@/components/dre/DREGoalsAnalysis";
 import DrillDownModal from "@/components/shared/DrillDownModal";
+import EditableRevenueRow from "@/components/dre/EditableRevenueRow";
 
 // Grupos que compõem os Custos Variáveis (para margem de contribuição)
 const CUSTOS_VARIAVEIS_GROUPS = ["Impostos e Financeiros", "Despesas Variáveis", "Custos Variáveis"];
@@ -65,6 +66,11 @@ export default function DRE() {
   const { data: costCenters = [] } = useQuery({
     queryKey: ["costCenters"],
     queryFn: () => base44.entities.CostCenter.list("name"),
+  });
+
+  const { data: manualRevenues = [] } = useQuery({
+    queryKey: ["dreManualRevenues", selectedYear],
+    queryFn: () => base44.entities.DREManualRevenue.list("-created_date", 5000),
   });
 
   const dreData = useMemo(() => {
@@ -145,7 +151,49 @@ export default function DRE() {
       },
     ];
 
-    const totalEntradas = revenueMonthly.slice();
+    // ── Faturamento manual (override por unidade/mês)
+    const manualMap = {};
+    (manualRevenues || []).forEach((m) => {
+      if (m.year !== year) return;
+      const key = m.cost_center || "";
+      if (!manualMap[key]) manualMap[key] = {};
+      manualMap[key][m.month] = m.revenue;
+    });
+    const hasManual = (u, monthIdx) => manualMap[u] && manualMap[u][monthIdx] != null;
+
+    let displayRevenue = revenueMonthly.slice();
+    if (selectedUnit === "all") {
+      Object.keys(manualMap).forEach((u) => {
+        if (!u) return;
+        const autoUnit = Array(12).fill(0);
+        yearTxns
+          .filter((t) => t.type === "entrada" && t.cost_center === u)
+          .forEach((t) => {
+            const d = new Date(t.date);
+            const isOp = opRevenueGroups.some((g) => (entryGroups[g] || []).includes(t.category));
+            const isOther = !knownEntryCats.includes(t.category);
+            if (isOp || isOther) autoUnit[d.getMonth()] += t.amount || 0;
+          });
+        for (let m = 0; m < 12; m++) {
+          if (hasManual(u, m)) displayRevenue[m] = displayRevenue[m] - autoUnit[m] + manualMap[u][m];
+        }
+      });
+    } else {
+      for (let m = 0; m < 12; m++) {
+        if (hasManual(selectedUnit, m)) displayRevenue[m] = manualMap[selectedUnit][m];
+      }
+    }
+
+    const manualMonths = new Set();
+    if (selectedUnit === "all") {
+      Object.keys(manualMap).forEach((u) => {
+        if (u) Object.keys(manualMap[u]).forEach((m) => manualMonths.add(Number(m)));
+      });
+    } else if (manualMap[selectedUnit]) {
+      Object.keys(manualMap[selectedUnit]).forEach((m) => manualMonths.add(Number(m)));
+    }
+
+    const totalEntradas = displayRevenue.slice();
 
     // ── OUTRAS RECEITAS
     const outrasReceitasRows = OUTRAS_RECEITAS_GROUPS
@@ -260,9 +308,10 @@ export default function DRE() {
       resultado,
       margemLiquida,
       saldoFinal,
+      manualMonths,
       yearTxns,
     };
-  }, [transactions, categories, selectedYear, selectedUnit]);
+  }, [transactions, categories, selectedYear, selectedUnit, manualRevenues]);
 
   const years = Array.from({ length: 5 }, (_, i) => String(currentYear - 2 + i));
 
@@ -271,6 +320,15 @@ export default function DRE() {
     : [{ label: MONTHS_PT[parseInt(selectedMonth)], idx: parseInt(selectedMonth) }];
 
   const colSpanTotal = visibleMonths.length + (selectedMonth === "all" ? 2 : 1);
+
+  const manualRecordMap = {};
+  manualRevenues
+    .filter((m) => m.year === parseInt(selectedYear))
+    .forEach((m) => {
+      const u = m.cost_center || "";
+      if (!manualRecordMap[u]) manualRecordMap[u] = {};
+      manualRecordMap[u][m.month] = m;
+    });
 
   if (isLoading) {
     return (
@@ -539,6 +597,26 @@ export default function DRE() {
         </div>
       </div>
 
+      {/* Aviso de faturamento manual */}
+      <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+        <Info className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+        <span>
+          {selectedUnit !== "all" ? (
+            <>
+              <strong className="text-foreground">Faturamento manual:</strong> clique no valor da linha{" "}
+              <strong>Total Receitas Operacionais</strong> para informar o faturamento real da unidade e
+              corrigir o DRE quando transferências entre contas distorcem o resultado. Meses ajustados
+              ficam destacados em destaque.
+            </>
+          ) : (
+            <>
+              Selecione uma unidade acima para ajustar o faturamento manualmente. Meses com ajuste
+              aparecem destacados e já refletem no resultado consolidado.
+            </>
+          )}
+        </span>
+      </div>
+
       {/* Análise IA com Metas */}
       <DREGoalsAnalysis
         dreData={dreData}
@@ -576,7 +654,18 @@ export default function DRE() {
                 {dreData.entryRows.map((row) => (
                   <DrillRow key={row.label} row={row} negative={false} />
                 ))}
-                <DRERow label="TOTAL RECEITAS OPERACIONAIS" monthly={dreData.totalEntradas} bold highlight />
+                <EditableRevenueRow
+                  label="TOTAL RECEITAS OPERACIONAIS"
+                  displayMonthly={dreData.totalEntradas}
+                  autoMonthly={dreData.entryRows[0].monthly}
+                  recordMap={manualRecordMap}
+                  manualMonths={dreData.manualMonths}
+                  selectedUnit={selectedUnit}
+                  selectedYear={selectedYear}
+                  visibleMonths={visibleMonths}
+                  showTotal={selectedMonth === "all"}
+                  editable={selectedUnit !== "all"}
+                />
 
                 {/* ── CUSTOS VARIÁVEIS ── */}
                 <SectionHeader label="Custos Variáveis" colorClass="bg-orange-50 text-orange-600" />

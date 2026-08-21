@@ -1,0 +1,73 @@
+{
+  "name": "DREManualRevenue",
+  "type": "object",
+  "properties": {
+    "year": {
+      "type": "number",
+      "description": "Ano de refer\u00eancia"
+    },
+    "month": {
+      "type": "number",
+      "description": "M\u00eas (0-11)"
+    },
+    "cost_center": {
+      "type": "string",
+      "description": "Unidade / Centro de custo (vazio = consolidado)"
+    },
+    "revenue": {
+      "type": "number",
+      "description": "Faturamento manual informado para o DRE"
+    }
+  },
+  "required": [
+    "year",
+    "month",
+    "cost_center",
+    "revenue"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "gerente"
+          }
+        }
+      ]
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "gerente"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "gerente"
+          }
+        }
+      ]
+    }
+  }
+}
